@@ -7,7 +7,7 @@ class Motion:
         self.robot = robot
 
     def __set_joint_angles(self, q):
-        pb.setJointMotorControlArray(self.robot.robot_id, self.robot.joint_ids, pb.POSITION_CONTROL,
+        pb.setJointMotorControlArray(self.robot.robot_id, self.robot.attributes, joint_ids, pb.POSITION_CONTROL,
                                      targetPositions=q, forces=[500] * len(self.robot.attributes.num_joints))
         if not self.robot.enable_realtime:
             for _ in range(self.robot.timestep):

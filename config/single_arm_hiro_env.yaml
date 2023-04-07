@@ -1,0 +1,24 @@
+table_wooden_panda:
+  filename: table_wooden_panda.urdf
+  position: [-0.26305, -0.04297, -0.45]
+  orientation: [0, 0, 0]
+table_ikea_panda:
+  filename: table_ikea_panda.urdf
+  position: [0.6114, -0.0502, 0]
+  orientation: [3.1214402987334857, 0.0013161004296716216, 0]
+back_wall_panda:
+  filename: back_wall_panda.urdf
+  position: [-0.7366, 0, 0]
+  orientation: [0, 0, 0]
+support_beams_panda:
+    filename: panda_support_beams.urdf
+    position: [-0.045, 0, -0.022225]
+    orientation: [0, 0, 0]
+clamps_panda:
+    filename: panda_clamps.urdf
+    position: [0.12, 0, -0.066675]
+    orientation: [0, 0, 0]
+plane:
+  filename: plane.urdf
+  position: [0, 0, -1]
+  orientation: [0, 0, 0]

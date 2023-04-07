@@ -6,14 +6,12 @@ from ..utils.robot import get_jacobian, get_jacobian_derivative, get_manipulabil
 
 
 class Attributes:
-    def __init__(self, robot):
-        self.robot = robot
-
+    def __init__(self, robot_id):
         self._joint_ids = []
         self._joint_names = []
         self._finger_joint_ids = []
-        for joint_id in range(pb.getNumJoints(self.robot.robot_id)):
-            joint_info = pb.getJointInfo(self.robot.robot_id, joint_id)
+        for joint_id in range(pb.getNumJoints(robot_id)):
+            joint_info = pb.getJointInfo(robot_id, joint_id)
 
             joint_name = str(joint_info[1])
             joint_type = joint_info[2]

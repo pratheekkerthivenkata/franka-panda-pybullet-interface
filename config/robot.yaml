@@ -1,0 +1,6 @@
+urdf_path: 'robot/panda.urdf'
+base_link: 'panda_link0'
+tip_link: 'panda_grasptarget'
+base_pose:
+  position: [0, 0, 0]
+  orientation: [0, 0, 0, 1]

@@ -12,6 +12,14 @@ class DualWebcam:
         self.cam_left_position = tf.translation_from_matrix(self.cam_left.robot_base_to_cam_tf)
         self.cam_right_position = tf.translation_from_matrix(self.cam_right.robot_base_to_cam_tf)
 
+    def visualize_rgb_frames(self):
+        self.cam_left.visualize_rgb_frame()
+        self.cam_right.visualize_rgb_frame()
+
+    def visualize_apriltags_by_family(self, family):
+        self.cam_left.visualize_apriltags_by_family(family)
+        self.cam_right.visualize_apriltags_by_family(family)
+
     def get_apriltag_pose_in_robot_frame(self, tag_id, family, euler=False):
         left_pose = self.cam_left.get_apriltag_pose_in_robot_frame(tag_id, family, euler=euler)
         right_pose = self.cam_right.get_apriltag_pose_in_robot_frame(tag_id, family, euler=euler)

@@ -13,17 +13,18 @@ from ..utils.file_io import load_yaml
 
 class Webcam:
     def __init__(self, cam):
-        cam_params = load_yaml(os.path.join(CONFIG_DIR, 'webcam.yaml' % cam))
+        self.cam = cam
+        cam_params = load_yaml(os.path.join(CONFIG_DIR, 'webcam.yaml' % self.cam))
 
         # open stream
-        self.cap = cv2.VideoCapture(self.__get_device_index(cam_params[cam]['serial_number']))
+        self.cap = cv2.VideoCapture(self.__get_device_index(cam_params[self.cam]['serial_number']))
         self.cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
         self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
 
         # intrinsics
-        self.img_dims = (cam_params[cam]['image_width'], cam_params[cam]['image_height'])
-        self.new_camera_matrix = np.array(cam_params[cam]['camera_matrix']['data']).reshape((3, 3))
-        self.dist_coeffs = np.array(cam_params[cam]['distortion_coefficients']['data'])
+        self.img_dims = (cam_params[self.cam]['image_width'], cam_params[self.cam]['image_height'])
+        self.new_camera_matrix = np.array(cam_params[self.cam]['camera_matrix']['data']).reshape((3, 3))
+        self.dist_coeffs = np.array(cam_params[self.cam]['distortion_coefficients']['data'])
         self.newcameramatrix, self.roi = cv2.getOptimalNewCameraMatrix(
             self.new_camera_matrix, self.dist_coeffs, self.img_dims, 1, self.img_dims
         )
@@ -31,8 +32,8 @@ class Webcam:
                            self.newcameramatrix[0][2], self.newcameramatrix[1][2]]
 
         # extrinsics
-        cam_pose = Pose(position=Point(*cam_params[cam]['pose_in_robot_frame']['position']),
-                        orientation=Quaternion(*cam_params[cam]['pose_in_robot_frame']['orientation']))
+        cam_pose = Pose(position=Point(*cam_params[self.cam]['pose_in_robot_frame']['position']),
+                        orientation=Quaternion(*cam_params[self.cam]['pose_in_robot_frame']['orientation']))
         cam_pose.convert_orientation(euler=True)
         self.robot_base_to_cam_tf = tf.compose_matrix(translate=cam_pose.position.tolist(),
                                                       angles=cam_pose.orientation.tolist())
@@ -72,7 +73,7 @@ class Webcam:
 
     def visualize_rgb_frame(self):
         while True:
-            cv2.imshow('rgb', self.get_rgb_img())
+            cv2.imshow(f'rgb_{self.cam}', self.get_rgb_img())
             if cv2.waitKey(1) == ord('q'):
                 break
 
@@ -81,8 +82,8 @@ class Webcam:
             img = self.get_rgb_img()
             _, overlay = self.apriltag.get_data(img, family, self.intrinsics,
                                                 visualize=True, verbose=True, annotate=True)
-            cv2.imshow('rgb', img)
-            cv2.imshow('rgb', overlay)
+            cv2.imshow(f'apriltags_{self.cam}', img)
+            cv2.imshow(f'apriltags_{self.cam}', overlay)
             if cv2.waitKey(1) == ord('q'):
                 break
 

@@ -1,0 +1,18 @@
+left:
+  serial_number: 1234
+  image_width: 640
+  image_height: 480
+  camera_matrix: []
+  distortion_coefficients: []
+  pose_in_robot_frame:
+    position: [0.0, 0.0, 0.0]
+    orientation: [0.0, 0.0, 0.0, 1.0]
+right:
+  serial_number: 5678
+  image_width: 640
+  image_height: 480
+  camera_matrix: []
+  distortion_coefficients: []
+  pose_in_robot_frame:
+    position: [0.0, 0.0, 0.0]
+    orientation: [0.0, 0.0, 0.0, 1.0]

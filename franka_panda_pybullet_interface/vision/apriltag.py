@@ -63,10 +63,10 @@ class AprilTag:
 
         avg_position = np.mean(positions, axis=0)
         avg_orientation = quaternion_avg_markley(np.array(orientations), [1] * len(orientations))
+        pose = Pose(position=Point(*avg_position), orientation=Quaternion(*avg_orientation))
 
         if matrix:
-            orientation = convert_orientation(Quaternion(*avg_orientation), euler=True)
-            return tf.compose_matrix(angles=orientation.tolist(), translate=avg_position.tolist())
+            pose = pose.convert_orientation(euler=True)
+            return tf.compose_matrix(translate=pose.position.tolist(), angles=pose.orientation.tolist())
 
-        pose = Pose(position=Point(*avg_position), orientation=Quaternion(*avg_orientation))
         return pose.convert_orientation(euler=euler)

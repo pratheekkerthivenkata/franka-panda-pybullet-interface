@@ -13,12 +13,26 @@ class DualWebcam:
         self.cam_right_position = tf.translation_from_matrix(self.cam_right.robot_base_to_cam_tf)
 
     def visualize_rgb_frames(self):
-        self.cam_left.visualize_rgb_frame()
-        self.cam_right.visualize_rgb_frame()
+        while True:
+            cv2.imshow(f'rgb_{self.cam_left.cam}', self.cam_left.get_rgb_img())
+            cv2.imshow(f'rgb_{self.cam_right.cam}', self.cam_right.get_rgb_img())
+            if cv2.waitKey(1) == ord('q'):
+                break
+
+    @staticmethod
+    def __visualize_apriltags_by_family(cam, family):
+        img = cam.get_rgb_img()
+        _, overlay = cam.apriltag.get_data(img, family, cam.intrinsics,
+                                           visualize=True, verbose=True, annotate=True)
+        cv2.imshow(f'apriltags_{cam.cam}', img)
+        cv2.imshow(f'apriltags_{cam.cam}', overlay)
 
     def visualize_apriltags_by_family(self, family):
-        self.cam_left.visualize_apriltags_by_family(family)
-        self.cam_right.visualize_apriltags_by_family(family)
+        while True:
+            self.__visualize_apriltags_by_family(self.cam_left, family)
+            self.__visualize_apriltags_by_family(self.cam_right, family)
+            if cv2.waitKey(1) == ord('q'):
+                break
 
     def get_apriltag_pose_in_robot_frame(self, tag_id, family, euler=False):
         left_pose = self.cam_left.get_apriltag_pose_in_robot_frame(tag_id, family, euler=euler)

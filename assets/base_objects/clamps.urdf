@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<robot name="panda_clamps.urdf">
+  <link name="panda_clamps_link">
+    <contact>
+      <lateral_friction value="0.12"/>
+      <inertia_scaling value="1.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value="0.112"/>
+       <inertia ixx="0.000166666667" ixy="0" ixz="0" iyy="0.000166666667" iyz="0" izz="0.000166666667"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.06985 0.19685 0.20955" />
+      </geometry>
+       <material name="white">
+        <color rgba="0.66 0.66 0.66 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.06985 0.19685 0.20955"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="clamps_joint" type="fixed">
+    <parent link="world"/>
+    <child link="panda_clamps_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+  <link name="world">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.0"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+</robot>

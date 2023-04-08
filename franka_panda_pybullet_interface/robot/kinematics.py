@@ -1,10 +1,11 @@
+from copy import deepcopy
+
 import numpy as np
 import transformations as tf
 from trac_ik_python.trac_ik import IK
 
 from ..utils.datatypes import Pose, Point
 from ..utils.file_io import load_txt
-from ..utils.misc import convert_orientation
 from ..utils.robot import get_dh_params, get_tf_mat
 
 
@@ -26,14 +27,17 @@ class Kinematics:
         if get_mat:
             return T
 
-        return Pose(position=Point(*translations), orientation=convert_orientation(Point(*euler_angles), euler))
+        pose = Pose(position=Point(*translations), orientation=Point(*euler_angles))
+        pose.convert_orientation(euler=euler)
+        return pose
 
     def get_ik_solution(self, ee_pose, seed_q):
-        ee_orientation = convert_orientation(ee_pose.orientation, euler=False)
+        ee_pose_copy = deepcopy(ee_pose)
+        ee_pose_copy.convert_orientation(euler=False)
 
         target_q = self.ik_solver.get_ik(
             seed_q,
-            ee_pose.position.x, ee_pose.position.y, ee_pose.position.z,
-            ee_orientation.x, ee_orientation.y, ee_orientation.z, ee_orientation.w)
+            ee_pose_copy.position.x, ee_pose_copy.position.y, ee_pose_copy.position.z,
+            ee_pose_copy.orientation.x, ee_pose_copy.orientation.y, ee_pose_copy.orientation.z, ee_pose_copy.orientation.w)
 
         return np.array(target_q)

@@ -7,10 +7,10 @@ class Motion:
         self.robot = robot
 
     def __set_joint_angles(self, q):
-        pb.setJointMotorControlArray(self.robot.robot_id, self.robot.attributes, joint_ids, pb.POSITION_CONTROL,
-                                     targetPositions=q, forces=[500] * len(self.robot.attributes.num_joints))
+        pb.setJointMotorControlArray(self.robot.robot_id, self.robot.joint_ids, pb.POSITION_CONTROL,
+                                     targetPositions=q, forces=[500] * self.robot.num_joints)
         if not self.robot.enable_realtime:
-            for _ in range(self.robot.timestep):
+            for _ in range(int(1 / self.robot.timestep)):
                 pb.stepSimulation()
 
     def __has_reached_q(self, q):
@@ -19,9 +19,9 @@ class Motion:
 
     def move_to_q(self, q, direct=False):
         if direct:
-            self.__disable_env_collisions()
+            # self.__disable_env_collisions()
             self.__set_joint_angles(q)
-            self.__enable_env_collisions()
+            # self.__enable_env_collisions()
         else:
             pb.setJointMotorControlArray(self.robot.robot_id, self.robot.joint_ids,
                                          controlMode=pb.POSITION_CONTROL,
@@ -88,3 +88,9 @@ class Motion:
         for _ in timestamps:
             dq = self.robot.kinematics.get_jacobian(self.robot.state.q) @ ee_velocity
             self.__execute_dq_command(dq)
+
+    def open_gripper(self):
+        pass
+
+    def close_gripper(self):
+        pass

@@ -6,7 +6,8 @@ from ..utils.robot import get_jacobian, get_jacobian_derivative, get_manipulabil
 
 
 class Attributes:
-    def __init__(self, robot_id):
+    def __init__(self, robot_id, metadata):
+        self.metadata = metadata
         self._joint_ids = []
         self._joint_names = []
         self._finger_joint_ids = []
@@ -49,6 +50,18 @@ class Attributes:
     @property
     def finger_joint_ids(self):
         return self._finger_joint_ids
+
+    @property
+    def link_names(self):
+        return self.metadata['link_names']
+
+    @property
+    def default_q(self):
+        return self.metadata['default_q']
+
+    @property
+    def self_collision_disabled_link_pairs(self):
+        return self.metadata['self_collision_disabled_link_pairs']
 
     @staticmethod
     def get_jacobian(q):

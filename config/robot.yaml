@@ -1,6 +1,27 @@
 urdf_path: 'robot/panda.urdf'
 base_link: 'panda_link0'
 tip_link: 'panda_grasptarget'
+link_names: ['panda_link0', 'panda_link1', 'panda_link2', 'panda_link3',
+             'panda_link4', 'panda_link5', 'panda_link6', 'panda_link7',
+             'panda_hand', 'panda_leftfinger', 'panda_rightfinger']
+default_q: [-0.017792060227770554, -0.7601235411041661, 0.019782607023391807,
+            -2.342050140544315, 0.029840531355804868, 1.5411935298621688, 0.7534486589746342]
 base_pose:
   position: [0, 0, 0]
   orientation: [0, 0, 0, 1]
+self_collision_disabled_link_pairs: [
+  ['panda_link8', 'panda_hand'],
+  ['panda_link0', 'panda_link1'], ['panda_link0', 'panda_link2'], ['panda_link0', 'panda_link3'], ['panda_link0', 'panda_link4'],
+  ['panda_link1', 'panda_link2'], ['panda_link1', 'panda_link3'], ['panda_link1', 'panda_link4'],
+  ['panda_link2', 'panda_link3'], ['panda_link2', 'panda_link4'],
+  ['panda_link3', 'panda_link4'], ['panda_link3', 'panda_link6'],
+  ['panda_link4', 'panda_link5'], ['panda_link4', 'panda_link6'], ['panda_link4', 'panda_link7'], ['panda_link4', 'panda_link8'],
+  ['panda_link5', 'panda_link6'],
+  ['panda_link6', 'panda_link7'], ['panda_link6', 'panda_link8'],
+  ['panda_link7', 'panda_link8'], ['panda_hand', 'panda_link7'],
+  ['panda_hand', 'panda_link4'], ['panda_hand', 'panda_link6'], ['panda_leftfinger', 'panda_link4'],
+  ['panda_leftfinger', 'panda_link6'], ['panda_leftfinger', 'panda_link7'], ['panda_leftfinger', 'panda_link8'],
+  ['panda_rightfinger', 'panda_link4'],
+  ['panda_rightfinger', 'panda_link6'], ['panda_rightfinger', 'panda_link7'], ['panda_rightfinger', 'panda_link8'],
+  ['panda_leftfinger', 'panda_hand'], ['panda_rightfinger', 'panda_hand'], ['panda_leftfinger', 'panda_rightfinger']
+]

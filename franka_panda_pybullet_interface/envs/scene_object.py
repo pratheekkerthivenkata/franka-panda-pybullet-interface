@@ -1,21 +1,21 @@
 import os
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pybullet as pb
 
-from env_definitions import ASSETS_DIR
-from logger import PrintLogger
-from npm_base import Point, Quaternion, Pose, convert_orientation
-import transformations as tf
+from ..definitions import ASSETS_DIR
+from ..utils import Print
+from ..utils.datatypes import Pose, Point, Quaternion, Node
 
 
 class SceneObject:
-    def __init__(self, urdf_filename, obj_type, node_lower_bound, node_upper_bound, sim, object_z=None, obj_height=None, table_surface_z=None, apriltag_id=None, apriltag_family=None, camera=None):
+    def __init__(self, urdf_filename, obj_type, sim, moveit_interface, collision_checker, object_z=None, obj_height=None, table_surface_z=None, apriltag_id=None, apriltag_family=None, camera=None, node_lower_bound=None, node_upper_bound=None):
         """
         Parameters
         ----------
-        urdf_filename [str]: relative path inside robot-sim-envs/robot_sim_envs/assets
+        urdf_filename [str]: relative path inside assets/
                              eg: 'realsense_box.urdf', 'ycb/YcbBanana/model.urdf', etc.
         obj_type [str]: 'fixed', 'movable', 'target'
         node_lower_bound [Node]: lower bound for sampling object poses
@@ -24,12 +24,15 @@ class SceneObject:
         table_surface_z [float]
         """
 
-        self.__printer = PrintLogger(__class__)
-        # self.__printer.print_warning('Only rectangular objects supported in this version.')
+        self.moveit = moveit_interface
+        self.collision_checker = collision_checker
 
-        self.id = None
+        self.__print = Print(__class__)
+        # self.__print.print_warning('Only rectangular objects supported in this version.')
+
+        self._id = None  # object ID in the simulation engine
         self.collision_engine_obj_id = None
-        self.link_name = None
+        self._link_name = None
         self.urdf_filename = os.path.join(ASSETS_DIR, urdf_filename)
         assert os.path.exists(self.urdf_filename), 'File not found: {}'.format(self.urdf_filename)
 
@@ -67,6 +70,21 @@ class SceneObject:
         if not isinstance(other, SceneObject):
             return False
         return self.id == other.id
+
+    @property
+    def name(self):
+        pass
+
+    @property
+    def link_name(self):
+        return self._link_name
+
+    @property
+    def id(self):
+        return self._id
+
+    def is_base(self):
+        pass
 
     def get_xy_bounds(self, obj_pose=None, padding=0.0):
         # TODO: not quite right..., need tight bounding box
@@ -139,81 +157,87 @@ class SceneObject:
                 return True
         return False
 
-    def spawn_in_collision_engine(self, client_id):
-        assert self.pose is not None
-        orientation = convert_orientation(self.pose.orientation, euler=False).tolist()
-        self.collision_engine_obj_id = pb.loadURDF(self.urdf_filename, self.pose.position.tolist(), orientation, useFixedBase=self.is_fixed(), physicsClientId=client_id)
-        self.link_name = pb.getJointInfo(self.collision_engine_obj_id, 0, client_id)[12].decode('utf-8')
-        return self.collision_engine_obj_id
+    # def spawn_in_collision_engine(self, client_id):
+    #     assert self.pose is not None
+    #     orientation = convert_orientation(self.pose.orientation, euler=False).tolist()
+    #     self.collision_engine_obj_id = pb.loadURDF(self.urdf_filename, self.pose.position.tolist(), orientation, useFixedBase=self.is_fixed(), physicsClientId=client_id)
+    #     self.link_name = pb.getJointInfo(self.collision_engine_obj_id, 0, client_id)[12].decode('utf-8')
+    #     return self.collision_engine_obj_id
 
     def update_pose_in_collision_engine(self, client_id):
         assert self.collision_engine_obj_id is not None
         orientation = convert_orientation(self.pose.orientation, euler=False).tolist()
         pb.resetBasePositionAndOrientation(self.collision_engine_obj_id, self.pose.position.tolist(), orientation, physicsClientId=client_id)
 
-    def spawn(self, pose, other_objects=None, goal_node=None, goal_radius=None, moveit_interface=None):
-        assert self.id is None, 'Object already spawned.'
+    def spawn(self, pose, client_id, other_objects=None):
+        # assert self.collision_engine_obj_id is None, 'Object already spawned in collision engine.'
+        # assert self.id is not None, 'Object not spawned in sim engine yet.'
         assert type(pose) == Pose
-        assert moveit_interface is not None
-        # make sure orientation is in quaternion form
-        orientation = convert_orientation(pose.orientation, euler=False).tolist()
+
+        # if self.collision_engine_obj_id is None:
+        #     assert pose is None
+        # if self.id is None:
+        #     assert pose is not None
+
+        pose_copy = deepcopy(pose)
+        pose_copy.convert_orientation(euler=False)
         try:
-            self.id = pb.loadURDF(self.urdf_filename, pose.position.tolist(), orientation, useFixedBase=self.is_fixed())
+            self._id = pb.loadURDF(self.urdf_filename,
+                                   pose_copy.position.tolist(), pose_copy.orientation.tolist(),
+                                   useFixedBase=self.is_fixed(), physicsClientId=client_id)
         except Exception as e:
             print('Failed to load URDF: {}'.format(self.urdf_filename))
-            import pdb; pdb.set_trace()
             raise e
 
         # respawn if in collision
         if other_objects is not None:
             while self.in_collision(other_objects):# or \
                     # (goal_node is not None and self.is_fixed() and self.node.distance(goal_node) < goal_radius):
-                self.relocate(self.sample_pose(), moveit_interface=moveit_interface)
+                self.relocate(self.sample_pose())
 
         self.update_pose()
 
-        moveit_interface.add_object_to_scene(self)
+        self.moveit.add_object_to_scene(self)
 
-    def remove(self):
+    def remove(self, client_id):
         assert self.id is not None, 'Object not spawned yet.'
-        pb.removeBody(self.id)
+        pb.removeBody(self.id, physicsClientId=client_id)
         self.id = None
         self.pose = None
         self.node = None
 
-    def relocate(self, pose, other_objects=None, moveit_interface=None):
+    def relocate(self, pose, client_id, other_objects=None):
         assert self.id is not None, 'Object not spawned yet.'
         assert type(pose) == Pose
-        assert moveit_interface is not None
+
+        pose_copy = deepcopy(pose)
         if 'tunnel' in self.urdf_filename:
-            orientation = convert_orientation(pose.orientation, euler=True)
-            orientation.x = 0
-            orientation.y = 0
-            orientation = convert_orientation(orientation, euler=False).tolist()
-        else:
-            orientation = convert_orientation(pose.orientation, euler=False).tolist()
-        pb.resetBasePositionAndOrientation(self.id, pose.position.tolist(), orientation)
+            pose_copy.convert_orientation(euler=True)
+            pose_copy.orientation.x = 0
+            pose_copy.orientation.y = 0
+        pose_copy.convert_orientation(euler=False)
+        pb.resetBasePositionAndOrientation(self.id, pose.position.tolist(), pose.orientation.tolist(),
+                                           physicsClientId=client_id)
         # respawn if in collision
         if other_objects is not None:
-            while self.in_collision(other_objects):  # or \
-                # (goal_node is not None and self.is_fixed() and self.node.distance(goal_node) < goal_radius):
-                self.relocate(self.sample_pose(), moveit_interface=moveit_interface)
+            while self.in_collision(other_objects):
+                self.relocate(self.sample_pose(), client_id=client_id, other_objects=other_objects)
         self.update_pose()
-        moveit_interface.relocate_object_in_scene(self)
+        self.moveit.relocate_object_in_scene(self)
 
     def sample_pose(self):
-        return Pose(position=Point(x=np.random.uniform(self.node_lower_bound.x, self.node_upper_bound.x),
-                                   y=np.random.uniform(self.node_lower_bound.y, self.node_upper_bound.y),
-                                   z=self.object_z),
-                    orientation=Point(x=0, y=0,
-                                      z=np.random.uniform(self.node_lower_bound.theta, self.node_upper_bound.theta)))
+        random_x = np.random.uniform(self.node_lower_bound.x, self.node_upper_bound.x)
+        random_y = np.random.uniform(self.node_lower_bound.y, self.node_upper_bound.y)
+        random_theta = np.random.uniform(self.node_lower_bound.theta, self.node_upper_bound.theta)
+        return Node(random_x, random_y, random_theta).topose(z=self.object_z, euler=True)
 
     def get_sim_pose(self, euler):
         assert self.id is not None, 'Object not spawned yet.'
+
         position, orientation = pb.getBasePositionAndOrientation(self.id)
-        orientation = Quaternion(x=orientation[0], y=orientation[1], z=orientation[2], w=orientation[3])
-        return Pose(position=Point(x=position[0], y=position[1], z=position[2]),
-                    orientation=convert_orientation(orientation, euler))
+        pose = Pose(position=Point(*position), orientation=Quaternion(*orientation))
+        pose.convert_orientation(euler=euler)
+        return pose
 
     def get_real_pose(self, euler):
         # assert self.id is not None, 'Object not spawned yet.'
@@ -222,7 +246,7 @@ class SceneObject:
         while True:
             pose = self.camera.get_apriltag_pose_in_robot_frame(self.apriltag_id, self.apriltag_family, euler=True)
             if pose is None:
-                self.__printer.print_error(f'Object w/ AprilTag ID {self.apriltag_id} not detected.')
+                self.__print.print_error(f'Object w/ AprilTag ID {self.apriltag_id} not detected.')
                 input('Reposition object and press Enter to continue...')
             else:
                 break
@@ -326,6 +350,13 @@ class SceneObject:
                             fill=fill, facecolor=color, edgecolor=ec, linewidth=1, alpha=alpha)
         ax.add_patch(patch)
         plt.show(block=False)
+
+    def update_sim_from_real(self):
+        real_pose = self.get_real_pose(euler=False)
+        if real_pose is None:
+            self.__print.print_error(f'Object w/ AprilTag ID {self.apriltag_id} not detected.')
+            return False
+        self.relocate(real_pose, moveit_interface=self.robot.moveit_interface)
 
     def get_distance(self, other):
         # TODO: return theta distance too; or combined position and orientation distance?

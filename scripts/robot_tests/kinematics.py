@@ -2,9 +2,9 @@
 
 import os
 
+from franka_panda_pybullet_interface.definitions import ASSETS_DIR
 from franka_panda_pybullet_interface.robot.kinematics import Kinematics
 from franka_panda_pybullet_interface.robot.limits import Limits
-from franka_panda_pybullet_interface.definitions import ASSETS_DIR
 
 if __name__ == '__main__':
     limits = Limits()

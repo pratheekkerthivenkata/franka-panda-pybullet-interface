@@ -63,7 +63,7 @@ class Pose:
         return Node(x=self.position.x, y=self.position.y, theta=ori.z)
 
     def convert_orientation(self, euler):
-        return Pose(position=self.position, orientation=convert_orientation(self.orientation, euler=euler))
+        self.orientation = convert_orientation(self.orientation, euler=euler)
 
 
 @dataclass
@@ -92,12 +92,11 @@ class Effort:
 
 @dataclass
 class JointLimits:
-    angle: np.ndarray
-    velocity: np.ndarray
-    # torque: np.ndarray
-    effort: np.ndarray
-    acceleration: np.ndarray
-    # jerk: np.ndarray
+    q: np.ndarray
+    dq: np.ndarray
+    ddq: np.ndarray
+    dddq: np.ndarray
+    tau: np.ndarray
 
 
 @dataclass

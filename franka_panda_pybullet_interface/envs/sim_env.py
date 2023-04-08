@@ -26,7 +26,7 @@ class SimEnv(object):
         self.timestep = self.sim_metadata['timestep']
 
         self.sim_id = self.setup_sim()
-        self.reset()
+        self.reset_sim_env()
         
     def setup_sim(self):
         if self.enable_gui:
@@ -53,7 +53,7 @@ class SimEnv(object):
 
         return sim_id
 
-    def reset(self):
+    def reset_sim_env(self):
         pb.resetSimulation()
 
         pb.setGravity(self.sim_metadata['gravity'][0], self.sim_metadata['gravity'][1], self.sim_metadata['gravity'][2])

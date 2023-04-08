@@ -11,27 +11,35 @@ from .motion import Motion
 from ..definitions import CONFIG_DIR, ASSETS_DIR
 from ..utils.file_io import load_yaml
 from ..utils.datatypes import Pose, Point, Quaternion
+from .trajectory import Trajectory
+from .moveit import MoveIt
 
 
 class Robot:
-    def __init__(self):
-        self.current_state = State()
+    def __init__(self, client_id, enable_realtime, timestep):
+        self.enable_realtime = enable_realtime
+        self.timestep = timestep
+        self.client_id = client_id
         self.limits = Limits()
-        self.attributes = Attributes(self)
         metadata = load_yaml(os.path.join(CONFIG_DIR, 'robot.yaml'))
-        self.kinematics = Kinematics(metadata['urdf_path'], metadata['base_link'], metadata['tip_link'])
-        self.dynamics = Dynamics()
+        self.urdf_path = os.path.join(ASSETS_DIR, metadata['urdf_path'])
+        self.kinematics = Kinematics(self.urdf_path, metadata['base_link'], metadata['tip_link'])
         self.motion = Motion(self)
 
         self.base_pose = Pose(position=Point(*metadata['base_pose']['position']),
                               orientation=Quaternion(*metadata['base_pose']['orientation']))
-        self.urdf_path = os.path.join(ASSETS_DIR, metadata['urdf_path'])
 
-        self.robot_id = self.load_robot(self.sim_id)
+        self.robot_id = self.load_robot(self.client_id)
+        self.attributes = Attributes(self.robot_id, metadata)
+        self.current_state = State(self.robot_id, self.attributes)
+        self.dynamics = Dynamics(self.attributes)
+        self.moveit = MoveIt()
+        self.trajectory = Trajectory(self.moveit)
+
 
         # add constraint between fingers to center the grip
-        c = pb.createConstraint(self.robot_id, self.gripper_joint_ids[0],
-                                self.robot_id, self.gripper_joint_ids[1],
+        c = pb.createConstraint(self.robot_id, self.finger_joint_ids[0],
+                                self.robot_id, self.finger_joint_ids[1],
                                 jointType=pb.JOINT_GEAR, jointAxis=[1, 0, 0],
                                 parentFramePosition=[0, 0, 0], childFramePosition=[0, 0, 0])
         pb.changeConstraint(c, gearRatio=-1, erp=0.1, maxForce=500)
@@ -55,20 +63,28 @@ class Robot:
         if hasattr(self.motion, name):
             return getattr(self.motion, name)
 
+        if hasattr(self.trajectory, name):
+            return getattr(self.trajectory, name)
+
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def update_current_state(self, state):
         self.current_state = state
         self.attributes.update_state(state)
 
-    def load_robot(self, sim_id):
+    def load_robot(self, client_id):
         # disable rendering to speed up URDF loading
         pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 0)
         robot_id = pb.loadURDF(self.urdf_path,
                                basePosition=self.base_pose.position.tolist(),
                                baseOrientation=self.base_pose.orientation.tolist(), useFixedBase=True,
                                flags=pb.URDF_USE_INERTIA_FROM_FILE | pb.URDF_USE_MATERIAL_COLORS_FROM_MTL,
-                               physicsClientId=sim_id)
+                               physicsClientId=client_id)
         pb.configureDebugVisualizer(pb.COV_ENABLE_RENDERING, 1)
 
         return robot_id
+
+    def reset(self):
+        self.move_to_q(self.default_q, direct=True)
+        self.close_gripper()
+        self.sim_steps = 0

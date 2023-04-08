@@ -3,8 +3,8 @@ from ..utils.robot import get_fd_solution, get_id_solution
 
 
 class Dynamics:
-    def __init__(self):
-        self.attributes = Attributes()
+    def __init__(self, attributes):
+        self.attributes = attributes
 
     def get_fd_solution(self, q, dq, tau):
         M = self.attributes.get_mass_matrix(q)

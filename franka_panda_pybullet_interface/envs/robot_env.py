@@ -1,8 +1,6 @@
-__metaclass__ = type
-
-from logger import PrintLogger
-from ..robot.robot import Robot
 from .sim_env import SimEnv
+from ..robot.robot import Robot
+from ..utils.collision import Collision
 
 
 class RobotEnv(SimEnv):
@@ -16,22 +14,9 @@ class RobotEnv(SimEnv):
         super(RobotEnv, self).__init__(enable_gui=self.enable_gui, enable_realtime=self.enable_realtime)
         self.env_name = 'RobotEnv'
 
-        self.robot = None
+        self.robot = Robot(client_id=self.sim_id, enable_realtime=self.enable_realtime, timestep=self.timestep)
+        self.collision_checker = Collision(self.robot, [])
 
-        self.reset()
-
-    def spawn_robot(self):
-        self.robot = Robot(client_id=self.sim_id, enable_realtime=self.enable_realtime)
-        if not self.enable_realtime:
-            # total number of executed simulation steps
-            self.robot.set_sim_steps(0)
-
-    def reset(self):
-        super().reset()
-
-        # reset robot joint configuration to home state
-        self.robot.move_to_default_pose(using_planner=False)
-        self.robot.operate_gripper(open_=False)
-
-        # reset number of simulation steps
-        self.robot.set_sim_steps(0)
+    def reset_robot_env(self):
+        self.robot.reset()
+        self.collision_checker.reset()

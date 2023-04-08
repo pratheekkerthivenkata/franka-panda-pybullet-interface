@@ -66,7 +66,8 @@ class AprilTag:
         pose = Pose(position=Point(*avg_position), orientation=Quaternion(*avg_orientation))
 
         if matrix:
-            pose = pose.convert_orientation(euler=True)
+            pose.convert_orientation(euler=True)
             return tf.compose_matrix(translate=pose.position.tolist(), angles=pose.orientation.tolist())
 
-        return pose.convert_orientation(euler=euler)
+        pose.convert_orientation(euler=euler)
+        return pose

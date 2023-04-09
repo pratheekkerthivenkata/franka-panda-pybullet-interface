@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
-<robot name="panda_clamps.urdf">
-  <link name="panda_clamps_link">
+<robot name="clamps.urdf">
+  <link name="clamps_link">
     <contact>
       <lateral_friction value="0.12"/>
       <inertia_scaling value="1.0"/>
@@ -28,7 +28,7 @@
   </link>
   <joint name="clamps_joint" type="fixed">
     <parent link="world"/>
-    <child link="panda_clamps_link"/>
+    <child link="clamps_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <link name="world">

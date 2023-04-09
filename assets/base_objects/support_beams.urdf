@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
-<robot name="panda_support_beams.urdf">
-  <link name="panda_support_beam_link">
+<robot name="support_beams.urdf">
+  <link name="support_beam_link">
     <contact>
       <lateral_friction value="0.12"/>
       <inertia_scaling value="1.0"/>
@@ -28,7 +28,7 @@
   </link>
   <joint name="support_joint" type="fixed">
     <parent link="world"/>
-    <child link="panda_support_beam_link"/>
+    <child link="support_beam_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
   </joint>
   <link name="world">

@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="table_panda_urdf.urdf">
+<robot name="table_ikea.urdf">
   <link name="table_ikea_link">
     <contact>
       <lateral_friction value="0.5"/>

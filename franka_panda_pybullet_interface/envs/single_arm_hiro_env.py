@@ -40,12 +40,13 @@ class SingleArmHIROEnv(RobotEnv):
         self.movable_objects = []
         self.fixed_obstacles = []
 
-        self.collision_checker.add_scene_objects(self.base_objects)
+        print("HIROENV")
+        self.collision_checker.add_collision_objects(self.base_objects)
 
     def __setup_env(self, urdf_filename, position, orientation):
         assert len(orientation) == 3  # euler
         obj = SceneObject(urdf_filename=urdf_filename, obj_type='fixed', sim=True,
-                          moveit_interface=self.robot.moveit, collision_checker=self.collision_checker)
+                          moveit_interface=self.robot.moveit, collision_checker=self.collision_checker, client_id=self.sim_id)
         obj_pose = Pose(position=Point(*position), orientation=Point(*orientation))
         obj.spawn(pose=obj_pose, client_id=self.sim_id)
         return obj

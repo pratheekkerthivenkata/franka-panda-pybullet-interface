@@ -15,8 +15,10 @@ class RobotEnv(SimEnv):
         self.env_name = 'RobotEnv'
 
         self.robot = Robot(client_id=self.sim_id, enable_realtime=self.enable_realtime, timestep=self.timestep)
+        print("ROBOTENV SETUP")
         self.collision_checker = Collision(self.robot, [])
 
     def reset_robot_env(self):
         self.robot.reset()
+        print("CALLING RESET")
         self.collision_checker.reset()

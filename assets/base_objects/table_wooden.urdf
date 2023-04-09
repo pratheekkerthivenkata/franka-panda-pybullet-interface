@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="table_panda_wooden.urdf">
+<robot name="table_wooden.urdf">
   <link name="table_wooden_link">
     <contact>
       <lateral_friction value="0.5"/>

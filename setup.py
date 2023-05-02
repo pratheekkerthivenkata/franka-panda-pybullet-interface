@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/a-nooj/franka-panda-pybullet-interface',
     packages=setuptools.find_packages(where='franka_panda_pybullet_interface*'),
-    install_requires=['numpy', 'pybullet==3.2.5', 'pyudev-0.24.1'],
+    install_requires=['numpy', 'pybullet==3.2.5', 'pyudev==0.24.1'],
     classifiers=[
         'Programming Language :: Python :: 3.8',
         'License :: OSI Approved :: MIT License',

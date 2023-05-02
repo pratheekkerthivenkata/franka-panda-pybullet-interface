@@ -47,7 +47,7 @@ class SingleArmHIROEnv(RobotEnv):
         obj = SceneObject(urdf_filename=os.path.join(ASSETS_DIR, urdf_filename), obj_type='fixed', sim=True,
                           moveit_interface=self.moveit_interface, collision_checker=self.collision_checker, client_id=self.sim_id)
         obj_pose = Pose(position=Point(*position), orientation=Point(*orientation))
-        obj.spawn(pose=obj_pose, client_id=self.sim_id)
+        obj.spawn(pose=obj_pose)
         return obj
 
     def reset_single_arm_hiro_env(self):

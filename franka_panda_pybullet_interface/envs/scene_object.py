@@ -86,9 +86,6 @@ class SceneObject:
     def id(self):
         return self._id
 
-    def is_base(self):
-        pass
-
     def get_xy_bounds(self, obj_pose=None, padding=0.0):
         # TODO: not quite right..., need tight bounding box
 
@@ -126,6 +123,9 @@ class SceneObject:
     def is_fixed(self):
         return self.obj_type == 'fixed'
 
+    def is_base(self):
+        return self.conds
+
     def get_link_names(self):
         return []
 
@@ -160,7 +160,7 @@ class SceneObject:
                 return True
         return False
 
-    def spawn(self, pose, client_id, other_objects=None):
+    def spawn(self, pose, other_objects=None):
         # assert self.collision_engine_obj_id is None, 'Object already spawned in collision engine.'
         # assert self.id is not None, 'Object not spawned in sim engine yet.'
         assert type(pose) == Pose
@@ -173,9 +173,10 @@ class SceneObject:
         pose_copy = deepcopy(pose)
         pose_copy.convert_orientation(euler=False)
         try:
+            print(self.urdf_filename, pose_copy)
             self._id = pb.loadURDF(self.urdf_filename,
                                    pose_copy.position.tolist(), pose_copy.orientation.tolist(),
-                                   useFixedBase=self.is_fixed(), physicsClientId=client_id)
+                                   useFixedBase=self.is_fixed(), physicsClientId=self.client_id)
         except Exception as e:
             print('Failed to load URDF: {}'.format(self.urdf_filename))
             raise e
@@ -189,7 +190,8 @@ class SceneObject:
         self.update_pose()
 
         self.moveit.add_object_to_scene(self)
-        self._link_name = pb.getJointInfo(self.id, 0, client_id)[12].decode('utf-8')
+        print(pb.getJointInfo(self._id, 0, self.client_id))
+        self._link_name = pb.getJointInfo(self.id, 0, self.client_id)[12].decode('utf-8')
         self._name = self.urdf_filename.split('/')[-1].split('.')[0]
 
     def remove(self, client_id):
@@ -199,7 +201,7 @@ class SceneObject:
         self.pose = None
         self.node = None
 
-    def relocate(self, pose, client_id, other_objects=None):
+    def relocate(self, pose, other_objects=None):
         assert self.id is not None, 'Object not spawned yet.'
         assert type(pose) == Pose
 
@@ -210,11 +212,11 @@ class SceneObject:
             pose_copy.orientation.y = 0
         pose_copy.convert_orientation(euler=False)
         pb.resetBasePositionAndOrientation(self.id, pose.position.tolist(), pose.orientation.tolist(),
-                                           physicsClientId=client_id)
+                                           physicsClientId=self.client_id)
         # respawn if in collision
         if other_objects is not None:
             while self.in_collision(other_objects):
-                self.relocate(self.sample_pose(), client_id=client_id, other_objects=other_objects)
+                self.relocate(self.sample_pose(), other_objects=other_objects)
         self.update_pose()
         self.moveit.relocate_object_in_scene(self)
 
@@ -224,7 +226,7 @@ class SceneObject:
         random_theta = np.random.uniform(self.node_lower_bound.theta, self.node_upper_bound.theta)
         return Node(random_x, random_y, random_theta).topose(z=self.object_z, euler=True)
 
-    def get_sim_pose(self, euler):
+    def get_sim_pose(self, euler=False):
         assert self.id is not None, 'Object not spawned yet.'
 
         position, orientation = pb.getBasePositionAndOrientation(self.id)
@@ -349,4 +351,4 @@ class SceneObject:
         if real_pose is None:
             self.__print.print_error(f'Object w/ AprilTag ID {self.apriltag_id} not detected.')
             return False
-        self.relocate(real_pose, moveit_interface=self.robot.moveit_interface)
+        self.relocate(real_pose)

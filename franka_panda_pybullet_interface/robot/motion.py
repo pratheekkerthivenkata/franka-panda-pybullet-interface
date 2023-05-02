@@ -18,21 +18,21 @@ class Motion:
         return err <= 1e-2
 
     def move_to_q(self, q, direct=False):
-        if direct:
-            # self.__disable_env_collisions()
-            self.__set_joint_angles(q)
-            # self.__enable_env_collisions()
-        else:
-            pb.setJointMotorControlArray(self.robot.robot_id, self.robot.joint_ids,
-                                         controlMode=pb.POSITION_CONTROL,
-                                         targetPositions=q)
+        # if direct:
+        #     self.__disable_env_collisions()
+        #     self.__set_joint_angles(q)
+        #     self.__enable_env_collisions()
+        # else:
+        pb.setJointMotorControlArray(self.robot.robot_id, self.robot.joint_ids,
+                                     controlMode=pb.POSITION_CONTROL,
+                                     targetPositions=q)
 
-            while not self.__has_reached_q(q):
-                if self.robot.enable_realtime:
-                    continue
-                else:
-                    pb.stepSimulation()
-                    self.robot.sim_steps += 1
+        while not self.__has_reached_q(q):
+            if self.robot.enable_realtime:
+                continue
+            else:
+                pb.stepSimulation()
+                self.robot.sim_steps += 1
 
         return True
 
@@ -41,6 +41,7 @@ class Motion:
         for t, q in zip(timestamps, q_trajectory):
             if prev_timestamp is not None:
                 assert t - prev_timestamp == self.robot.timestep
+                prev_timestamp = t
 
             success = self.move_to_q(q, direct=False)
             if not success:
@@ -59,6 +60,7 @@ class Motion:
         for t, ee_pose in zip(timestamps, ee_pose_trajectory):
             if prev_timestamp is not None:
                 assert t - prev_timestamp == self.robot.timestep
+                prev_timestamp = t
 
             success = self.move_to_ee_pose(ee_pose, direct=False)
             if not success:
@@ -78,6 +80,7 @@ class Motion:
         for t, dq in zip(timestamps, dq_trajectory):
             if prev_timestamp is not None:
                 assert t - prev_timestamp == self.robot.timestep
+                prev_timestamp = t
 
             self.__execute_dq_command(dq)
 

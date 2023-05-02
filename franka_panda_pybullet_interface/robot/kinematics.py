@@ -40,4 +40,6 @@ class Kinematics:
             ee_pose_copy.position.x, ee_pose_copy.position.y, ee_pose_copy.position.z,
             ee_pose_copy.orientation.x, ee_pose_copy.orientation.y, ee_pose_copy.orientation.z, ee_pose_copy.orientation.w)
 
+        if target_q is None:
+            return None
         return np.array(target_q)

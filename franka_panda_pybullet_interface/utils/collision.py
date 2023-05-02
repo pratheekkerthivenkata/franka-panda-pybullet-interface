@@ -106,14 +106,17 @@ class Collision:
             val1, val2 = combo
             # want this function to detect collision between robot links and object links only,
             # not amongst the same object class
-            if val1 == 'panda_link0' and val2 in ['table_wooden_link', 'table_ikea_link', 'wall', 'support_beam_link', 'clamps_link', 'planeLink']:
+            if (val1 == 'panda_link0' and val2 in ['table_wooden_link', 'table_ikea_link', 'wall', 'support_beam_link', 'clamps_link', 'planeLink']) or \
+               (val2 == 'panda_link0' and val1 in ['table_wooden_link', 'table_ikea_link', 'wall', 'support_beam_link', 'clamps_link', 'planeLink']):
                 continue
             if 'panda' in val1 and not 'panda' in val2:
                 collision_enabled_link_pairs.append((self.mapper_dict[val1], self.mapper_dict[val2]))
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         return CollisionDetector(self.client_id, self.collision_bodies, collision_enabled_link_pairs)
 
     def __setup_obj_obj_collisions(self):
+        # TODO: UNTESTED
+
         collision_enabled_link_pairs = []
         all_combos = list(combinations(self.mapper_dict.keys(), 2))
 
@@ -122,6 +125,8 @@ class Collision:
             # object only
             if 'panda' in val1 or 'panda' in val2:
                 continue
+            # if is_base_object(val1) or is_base_object(val2):
+            #     continue
             collision_enabled_link_pairs.append((self.mapper_dict[val1], self.mapper_dict[val2]))
 
         return CollisionDetector(self.client_id, self.collision_bodies, collision_enabled_link_pairs)

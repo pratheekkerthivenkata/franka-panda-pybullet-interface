@@ -3,7 +3,8 @@ import os
 import cv2
 import numpy as np
 import transformations as tf
-from pyudev import Context, DeviceNotFound
+import pyudev
+from pyudev import Context#, DeviceNotFound
 
 from .apriltag import AprilTag
 from ..definitions import CONFIG_DIR
@@ -52,7 +53,7 @@ class Webcam:
         for device in video_devices:
             try:
                 parent = device.find_parent('usb', 'usb_device')
-            except DeviceNotFound:
+            except pyudev.DeviceNotFound:
                 continue
 
             serial = parent.attributes.asstring('serial')

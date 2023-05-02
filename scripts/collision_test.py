@@ -8,7 +8,11 @@ if __name__ == '__main__':
 
     for _ in range(25):
         q = env.robot.limits.sample_q()
-        env.robot.move_to_q(q, direct=True)
+        retval = env.robot.trajectory.get_plan(start_q=env.robot.q, end_q=q)
+        if retval is None:
+            continue
+        t, _, q, _, _ = retval
+        env.robot.execute_q_trajectory(q, t)
         print(f'Self-Collision: {env.collision_checker.is_robot_in_self_collision()}, '
               f'Environment Collision: {env.collision_checker.is_robot_in_collision_with_env()}')
         input()

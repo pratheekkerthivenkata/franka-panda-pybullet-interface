@@ -2,17 +2,17 @@ import os
 
 import pybullet as pb
 
-from .state import State
 from .attributes import Attributes
 from .dynamics import Dynamics
 from .kinematics import Kinematics
 from .limits import Limits
 from .motion import Motion
-from ..definitions import CONFIG_DIR, ASSETS_DIR
-from ..utils.file_io import load_yaml
-from ..utils.datatypes import Pose, Point, Quaternion
-from .trajectory import Trajectory
 from .moveit import MoveIt
+from .state import State
+from .trajectory import Trajectory
+from ..definitions import CONFIG_DIR, ASSETS_DIR
+from ..utils.datatypes import Pose, Point, Quaternion
+from ..utils.file_io import load_yaml
 
 
 class Robot:
@@ -21,21 +21,22 @@ class Robot:
         self.timestep = timestep
         self.client_id = client_id
         self.limits = Limits()
-        metadata = load_yaml(os.path.join(CONFIG_DIR, 'robot.yaml'))
-        self.urdf_path = os.path.join(ASSETS_DIR, metadata['urdf_path'])
-        self.kinematics = Kinematics(self.urdf_path, metadata['base_link'], metadata['tip_link'])
+        self.metadata = load_yaml(os.path.join(CONFIG_DIR, 'robot.yaml'))
+        self.urdf_path = os.path.join(ASSETS_DIR, self.metadata['urdf_path'])
+        self.kinematics = Kinematics(self.urdf_path, self.metadata['base_link'], self.metadata['tip_link'])
         self.motion = Motion(self)
+        self.sim_steps = 0
+        self.self_collision_checker = None
 
-        self.base_pose = Pose(position=Point(*metadata['base_pose']['position']),
-                              orientation=Quaternion(*metadata['base_pose']['orientation']))
+        self.base_pose = Pose(position=Point(*self.metadata['base_pose']['position']),
+                              orientation=Quaternion(*self.metadata['base_pose']['orientation']))
 
         self.robot_id = self.load_robot(self.client_id)
-        self.attributes = Attributes(self.robot_id, metadata)
-        self.current_state = State(self.robot_id, self.attributes)
+        self.attributes = Attributes(self.robot_id, self.metadata)
+        self.current_state = State(self)
         self.dynamics = Dynamics(self.attributes)
         self.moveit = MoveIt()
-        self.trajectory = Trajectory(self.moveit)
-
+        self.trajectory = Trajectory(self.moveit, self.limits)
 
         # add constraint between fingers to center the grip
         c = pb.createConstraint(self.robot_id, self.finger_joint_ids[0],
@@ -67,10 +68,6 @@ class Robot:
             return getattr(self.trajectory, name)
 
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
-
-    def update_current_state(self, state):
-        self.current_state = state
-        self.attributes.update_state(state)
 
     def load_robot(self, client_id):
         # disable rendering to speed up URDF loading

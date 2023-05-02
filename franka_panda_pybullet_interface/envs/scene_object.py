@@ -35,8 +35,9 @@ class SceneObject:
         # self.collision_engine_obj_id = None
         self._link_name = None
         self._name = None
-        self.urdf_filename = os.path.join(ASSETS_DIR, urdf_filename)
-        assert os.path.exists(self.urdf_filename), 'File not found: {}'.format(self.urdf_filename)
+        assert os.path.exists(urdf_filename), 'File not found: {}'.format(urdf_filename)
+        assert os.path.isabs(urdf_filename), 'Please provide absolute path to the URDF file.'
+        self.urdf_filename = urdf_filename#os.path.join(ASSETS_DIR, urdf_filename)
 
         self.obj_type = obj_type
         self.node_lower_bound = node_lower_bound

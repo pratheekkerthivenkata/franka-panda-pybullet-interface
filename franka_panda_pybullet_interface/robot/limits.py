@@ -1,4 +1,5 @@
 import numpy as np
+from ..utils.datatypes import Pose, Point
 
 
 class Limits:
@@ -103,3 +104,9 @@ class Limits:
 
     def sample_tau(self):
         return np.random.uniform(self._tau[:, 0], self._tau[:, 1])
+
+    def sample_ee_pose(self, euler):
+        rand_ee_pose = np.random.uniform(self._ee_pose[:, 0], self._ee_pose[:, 1])
+        ee_pose = Pose(position=Point(*rand_ee_pose[:3]), orientation=Point(*rand_ee_pose[3:]))
+        ee_pose.convert_orientation(euler=euler)
+        return ee_pose

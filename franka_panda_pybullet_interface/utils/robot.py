@@ -1,10 +1,58 @@
 import warnings
 
+import numba as nb
 import numpy as np
 from numba import NumbaPerformanceWarning
 from numba import njit
+from numbalsoda import lsoda_sig
 
 warnings.filterwarnings('ignore', category=NumbaPerformanceWarning)
+
+
+@nb.cfunc(lsoda_sig)
+def deriv(t, y_, dy, p_):
+    y = nb.carray(y_, (14,))
+
+    vals = nb.carray(p_, (119,))
+    tau = vals[:7]
+    M = vals[7:7 + 7 * 7].reshape((7, 7))
+    C = vals[7 + 7 * 7:7 + 7 * 7 + 7 * 7].reshape((7, 7))
+    g = vals[-14:-7]
+    f = vals[-7:]
+
+    dq = y[7:]
+
+    ddq = np.linalg.solve(M, tau - C @ dq - g - f)
+
+    dy[0] = dq[0]
+    dy[1] = dq[1]
+    dy[2] = dq[2]
+    dy[3] = dq[3]
+    dy[4] = dq[4]
+    dy[5] = dq[5]
+    dy[6] = dq[6]
+    dy[7] = ddq[0]
+    dy[8] = ddq[1]
+    dy[9] = ddq[2]
+    dy[10] = ddq[3]
+    dy[11] = ddq[4]
+    dy[12] = ddq[5]
+    dy[13] = ddq[6]
+
+
+@njit
+def get_ddq(J, ee_acc_k, dq):
+    return np.linalg.pinv(J) @ (ee_acc_k - get_jacobian_derivative(J, dq) @ dq)
+
+
+@njit
+def get_dq(J, ee_vel):
+    return np.linalg.pinv(J) @ ee_vel
+
+
+@njit
+def get_tau(M, ddq, C, dq, g, f):
+    return M @ ddq + C @ dq + g + f
 
 
 def get_dh_params(q):

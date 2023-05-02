@@ -2,9 +2,8 @@ import os
 
 import cv2
 import numpy as np
-import transformations as tf
 import pyudev
-from pyudev import Context#, DeviceNotFound
+import transformations as tf
 
 from .apriltag import AprilTag
 from ..definitions import CONFIG_DIR
@@ -47,7 +46,7 @@ class Webcam:
 
     @staticmethod
     def __get_device_index(serial_number):
-        context = Context()
+        context = pyudev.Context()
         video_devices = context.list_devices(subsystem='video4linux')
 
         for device in video_devices:

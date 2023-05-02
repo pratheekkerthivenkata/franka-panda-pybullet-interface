@@ -1,5 +1,6 @@
-from franka_panda_pybullet_interface.vision import DualWebcam
+#!/usr/bin/env python
 
+from franka_panda_pybullet_interface.vision import DualWebcam
 
 if __name__ == '__main__':
     cam = DualWebcam()

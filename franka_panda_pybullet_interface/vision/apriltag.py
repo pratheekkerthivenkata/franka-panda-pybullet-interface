@@ -8,7 +8,7 @@ import apriltag
 
 from ..utils.datatypes import Pose, Point, Quaternion
 import numpy as np
-from robot_sim_envs.utils import quaternion_avg_markley
+from ..utils.misc import quaternion_avg_markley
 
 
 class AprilTag:

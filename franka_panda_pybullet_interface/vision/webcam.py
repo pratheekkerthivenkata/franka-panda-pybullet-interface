@@ -15,7 +15,7 @@ from ..utils.file_io import load_yaml
 class Webcam:
     def __init__(self, cam):
         self.cam = cam
-        cam_params = load_yaml(os.path.join(CONFIG_DIR, 'webcam.yaml' % self.cam))
+        cam_params = load_yaml(os.path.join(CONFIG_DIR, 'webcam.yaml'))
 
         # open stream
         self.cap = cv2.VideoCapture(self.__get_device_index(cam_params[self.cam]['serial_number']))
@@ -24,8 +24,8 @@ class Webcam:
 
         # intrinsics
         self.img_dims = (cam_params[self.cam]['image_width'], cam_params[self.cam]['image_height'])
-        self.new_camera_matrix = np.array(cam_params[self.cam]['camera_matrix']['data']).reshape((3, 3))
-        self.dist_coeffs = np.array(cam_params[self.cam]['distortion_coefficients']['data'])
+        self.new_camera_matrix = np.array(cam_params[self.cam]['camera_matrix']).reshape((3, 3))
+        self.dist_coeffs = np.array(cam_params[self.cam]['distortion_coefficients'])
         self.newcameramatrix, self.roi = cv2.getOptimalNewCameraMatrix(
             self.new_camera_matrix, self.dist_coeffs, self.img_dims, 1, self.img_dims
         )

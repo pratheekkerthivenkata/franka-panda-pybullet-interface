@@ -3,7 +3,7 @@ import os
 from .robot_env import RobotEnv
 from .scene_object import SceneObject
 from ..definitions import CONFIG_DIR, ASSETS_DIR
-from ..utils.datatypes import Pose, Point, Node
+from ..utils.datatypes import Pose, Point
 from ..utils.file_io import load_yaml
 
 
@@ -44,12 +44,8 @@ class SingleArmHIROEnv(RobotEnv):
 
     def __setup_env(self, urdf_filename, position, orientation):
         assert len(orientation) == 3  # euler
-        obj = SceneObject(urdf_filename=os.path.join(ASSETS_DIR, urdf_filename), obj_type='fixed', sim=True,
-                          moveit_interface=self.moveit_interface, collision_checker=self.collision_checker, client_id=self.sim_id)
+        obj = SceneObject(urdf_filename=os.path.join(ASSETS_DIR, urdf_filename), obj_type='fixed',
+                          moveit_interface=self.moveit_interface, client_id=self.sim_id)
         obj_pose = Pose(position=Point(*position), orientation=Point(*orientation))
         obj.spawn(pose=obj_pose)
         return obj
-
-    def reset_single_arm_hiro_env(self):
-        super().reset_robot_env()
-        self.collision_checker.add_collision_objects(self.base_objects)

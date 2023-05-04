@@ -81,7 +81,10 @@ class Robot:
 
         return robot_id
 
-    def reset(self):
+    def reset_to_default_pose(self):
         self.move_to_q(self.default_q, direct=True)
         self.close_gripper()
+
+    def reset(self):
+        self.reset_to_default_pose()
         self.sim_steps = 0

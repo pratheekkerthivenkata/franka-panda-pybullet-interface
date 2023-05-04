@@ -51,7 +51,7 @@ class MoveIt:
         elif 'box' in scene_object.urdf_filename:
             self.scene.add_box(object_name, object_pose, size=(0.24, 0.24, 0.24))
         else:
-            self.scene.add_box(object_name, object_pose, size=scene_object.get_size())
+            self.scene.add_box(object_name, object_pose, size=scene_object.size)
         return object_name
 
     def remove_object_from_scene(self, scene_object):

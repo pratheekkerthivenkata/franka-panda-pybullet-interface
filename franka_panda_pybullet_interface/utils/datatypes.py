@@ -118,3 +118,9 @@ class Node:
     def distance(self, other):
         # only calculates positional distance
         return np.linalg.norm(np.array(self.totuple()[:2]) - np.array(other.totuple()[:2]))
+
+    def sample(self, lower_bounds, upper_bounds):
+        assert type(lower_bounds) == type(upper_bounds) == Node
+        self.x = np.random.uniform(lower_bounds.x, upper_bounds.x)
+        self.y = np.random.uniform(lower_bounds.y, upper_bounds.y)
+        self.theta = np.random.uniform(lower_bounds.theta, upper_bounds.theta)

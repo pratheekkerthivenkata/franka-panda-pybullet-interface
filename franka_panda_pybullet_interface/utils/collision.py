@@ -46,16 +46,16 @@ class Collision:
 
             self.scene_objects.append(scene_obj)
 
-            collision_obj = CollisionObject(scene_obj.urdf_filename, scene_obj.obj_type, self.client_id)
+            collision_obj = CollisionObject(scene_obj, self.client_id)#scene_obj.urdf_filename, scene_obj.obj_type, self.client_id)
             collision_obj.spawn(scene_obj.pose)
 
             self.collision_objects.append(collision_obj)
             self.collision_obj_names.append(collision_obj.name)
             self.collision_bodies[collision_obj.name] = collision_obj.id
-            self.mapper_dict[collision_obj.link_name] = \
-                NamedCollisionObject(collision_obj.name, collision_obj.link_name)
-
-            # TODO: fix for tunnel! multilink and box!
+            for link_name in collision_obj.link_names:
+                self.mapper_dict[link_name] = NamedCollisionObject(collision_obj.name, link_name)
+            # self.mapper_dict[collision_obj.link_name] = \
+            #     NamedCollisionObject(collision_obj.name, collision_obj.link_name)
 
         self.update_collision_detectors()
 
@@ -73,7 +73,8 @@ class Collision:
             self.collision_objects.pop(idx)
             self.collision_obj_names.pop(idx)
             self.collision_bodies.pop(collision_obj.name)
-            self.mapper_dict.pop(collision_obj.link_name)
+            for link_name in collision_obj.link_names:
+                self.mapper_dict.pop(link_name)
 
             collision_obj.remove(client_id=self.client_id)
 
@@ -83,7 +84,7 @@ class Collision:
 
     def update_collision_detectors(self):
         self.robot_object_collision_detector = self.__setup_robot_obj_collisions()
-        self.object_object_collision_detector = self.__setup_obj_obj_collisions()
+        # self.object_object_collision_detector = self.__setup_obj_obj_collisions()
 
     def __setup_robot_self_collisions(self):
         collision_enabled_link_pairs = []
@@ -100,7 +101,6 @@ class Collision:
     def __setup_robot_obj_collisions(self):
         collision_enabled_link_pairs = []
         all_combos = list(combinations(self.mapper_dict.keys(), 2))
-        # import pdb; pdb.set_trace()
 
         for combo in all_combos:
             val1, val2 = combo
@@ -111,25 +111,32 @@ class Collision:
                 continue
             if 'panda' in val1 and not 'panda' in val2:
                 collision_enabled_link_pairs.append((self.mapper_dict[val1], self.mapper_dict[val2]))
-        # import pdb; pdb.set_trace()
-        return CollisionDetector(self.client_id, self.collision_bodies, collision_enabled_link_pairs)
 
-    def __setup_obj_obj_collisions(self):
-        # TODO: UNTESTED
+        add_base_link = False
+        for obj_name in self.collision_bodies.keys():
+            if 'box' in obj_name or 'tunnel' in obj_name:
+                add_base_link = True
+                break
+        print(self.collision_bodies.keys(), add_base_link, 'box' in self.collision_bodies.keys())
+        return CollisionDetector(self.client_id, self.collision_bodies, collision_enabled_link_pairs,
+                                 add_base_link=add_base_link)
 
-        collision_enabled_link_pairs = []
-        all_combos = list(combinations(self.mapper_dict.keys(), 2))
-
-        for combo in all_combos:
-            val1, val2 = combo
-            # object only
-            if 'panda' in val1 or 'panda' in val2:
-                continue
-            # if is_base_object(val1) or is_base_object(val2):
-            #     continue
-            collision_enabled_link_pairs.append((self.mapper_dict[val1], self.mapper_dict[val2]))
-
-        return CollisionDetector(self.client_id, self.collision_bodies, collision_enabled_link_pairs)
+    # def __setup_obj_obj_collisions(self):
+    #     # TODO: UNTESTED
+    #
+    #     collision_enabled_link_pairs = []
+    #     all_combos = list(combinations(self.mapper_dict.keys(), 2))
+    #
+    #     for combo in all_combos:
+    #         val1, val2 = combo
+    #         # object only
+    #         if 'panda' in val1 or 'panda' in val2:
+    #             continue
+    #         # if is_base_object(val1) or is_base_object(val2):
+    #         #     continue
+    #         collision_enabled_link_pairs.append((self.mapper_dict[val1], self.mapper_dict[val2]))
+    #
+    #     return CollisionDetector(self.client_id, self.collision_bodies, collision_enabled_link_pairs)
 
     def is_robot_in_self_collision(self, q=None):
         if q is None:

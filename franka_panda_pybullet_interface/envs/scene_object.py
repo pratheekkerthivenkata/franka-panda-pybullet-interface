@@ -5,13 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pybullet as pb
 
-from ..definitions import ASSETS_DIR
 from ..utils import Print
 from ..utils.datatypes import Pose, Point, Quaternion, Node
 
 
 class SceneObject:
-    def __init__(self, urdf_filename, obj_type, sim, moveit_interface, collision_checker, client_id, object_z=None, obj_height=None, table_surface_z=None, apriltag_id=None, apriltag_family=None, camera=None, node_lower_bound=None, node_upper_bound=None):
+    def __init__(self, urdf_filename, obj_type, moveit_interface, client_id, name_suffix='', object_z=None, apriltag_id=None, apriltag_family=None, camera=None, node_lower_bound=None, node_upper_bound=None):
         """
         Parameters
         ----------
@@ -25,58 +24,43 @@ class SceneObject:
         """
 
         self.moveit = moveit_interface
-        self.collision_checker = collision_checker
         self.client_id = client_id
+        self.name_suffix = name_suffix
+        self._link_names = []
+        self._name = None
 
         self.__print = Print(__class__)
-        # self.__print.print_warning('Only rectangular objects supported in this version.')
 
-        self._id = None  # object ID in PyBullet
-        # self.collision_engine_obj_id = None
-        self._link_name = None
-        self._name = None
         assert os.path.exists(urdf_filename), 'File not found: {}'.format(urdf_filename)
         assert os.path.isabs(urdf_filename), 'Please provide absolute path to the URDF file.'
-        self.urdf_filename = urdf_filename#os.path.join(ASSETS_DIR, urdf_filename)
+        self.urdf_filename = urdf_filename
 
+        self._id = None  # object ID in PyBullet
         self.obj_type = obj_type
         self.node_lower_bound = node_lower_bound
         self.node_upper_bound = node_upper_bound
         self.object_z = object_z
-        if self.object_z is None:
-            # assert obj_height is not None
-            # assert table_surface_z is not None
-            self.object_z = None#table_surface_z + obj_height / 2
-        self.sim = sim
 
         self.pose = None
         self.node = None
 
         self.patch = None
 
-        self.conds = 'table' in self.urdf_filename or \
-                'wall' in self.urdf_filename or \
-                'clamp' in self.urdf_filename or \
-                'beam' in self.urdf_filename or \
-                'plane' in self.urdf_filename
-
-        if not self.sim and not self.conds:
-            assert apriltag_id is not None
-            assert apriltag_family is not None
-            assert camera is not None
-
-            self.apriltag_id = apriltag_id
-            self.apriltag_family = apriltag_family
-            self.camera = camera
+        self.apriltag_id = apriltag_id
+        self.apriltag_family = apriltag_family
+        self.camera = camera
 
     def __eq__(self, other):
-        if not isinstance(other, SceneObject):
+        assert self.id is not None, 'Object not spawned yet.'
+        assert other.id is not None, 'Other object not spawned yet.'
+
+        if not isinstance(other, SceneObject) or other is None:
             return False
         return self.id == other.id
 
     @property
-    def link_name(self):
-        return self._link_name
+    def link_names(self):
+        return self._link_names
 
     @property
     def name(self):
@@ -86,6 +70,31 @@ class SceneObject:
     def id(self):
         return self._id
 
+    def is_target(self):
+        return self.obj_type == 'target'
+
+    def is_fixed(self):
+        return self.obj_type == 'fixed'
+
+    def is_base(self):
+        for name in ['table', 'wall', 'clamp', 'beam', 'plane']:
+            if name in self.urdf_filename:
+                return True
+        return False
+
+    def get_link_names(self):
+        return []
+
+    @property
+    def size(self):
+        assert self.id is not None, f'Object ({self.name}) not spawned yet.'
+        return pb.getVisualShapeData(self.id)[0][3]
+
+    @property
+    def friction(self):
+        assert self.id is not None, 'Object not spawned yet.'
+        return pb.getDynamicsInfo(self.id, -1)[1]
+
     def get_xy_bounds(self, obj_pose=None, padding=0.0):
         # TODO: not quite right..., need tight bounding box
 
@@ -94,12 +103,10 @@ class SceneObject:
             obj_pose = self.pose
         assert type(obj_pose) == Pose
 
-        size = self.get_size()
-
-        x_min = obj_pose.position.x - size[0] / 2 - padding
-        x_max = obj_pose.position.x + size[0] / 2 + padding
-        y_min = obj_pose.position.y - size[1] / 2 - padding
-        y_max = obj_pose.position.y + size[1] / 2 + padding
+        x_min = obj_pose.position.x - self.size[0] / 2 - padding
+        x_max = obj_pose.position.x + self.size[0] / 2 + padding
+        y_min = obj_pose.position.y - self.size[1] / 2 - padding
+        y_max = obj_pose.position.y + self.size[1] / 2 + padding
 
         orientation = convert_orientation(obj_pose.orientation, euler=True)
         rotation_matrix = np.array([[np.cos(orientation.z), -np.sin(orientation.z)],
@@ -112,42 +119,14 @@ class SceneObject:
     def is_within_bounds(self, bounds, pose=None):
         assert self.id is not None, 'Object not spawned yet.'
         if pose is None:
-            self.update_pose()
+            # self.update_pose()
             pose = self.pose
         return bounds[0][0] <= pose.position.x <= bounds[0][1] and \
                bounds[1][0] <= pose.position.y <= bounds[1][1]
 
-    def is_target(self):
-        return self.obj_type == 'target'
-
-    def is_fixed(self):
-        return self.obj_type == 'fixed'
-
-    def is_base(self):
-        return self.conds
-
-    def get_link_names(self):
-        return []
-
-    def update_pose(self, pose=None):
-        if pose is None:
-            if self.sim or self.conds:
-                self.pose = self.get_sim_pose(euler=False)
-            else:
-                self.pose = self.get_real_pose(euler=False)
-        if self.pose is None:
-            self.node = None
-            return
-        self.node = self.pose.tonode()
-        # self.relocate(self.pose)
-
-    def get_size(self):
-        assert self.id is not None, 'Object not spawned yet.'
-        return pb.getVisualShapeData(self.id)[0][3]
-
     def do_objects_overlap(self, other_obj, tolerance=0.01):
-        assert self.id is not None, 'Object not spawned yet.'
-        assert other_obj.id is not None, 'Object not spawned yet.'
+        assert self.id is not None, f'Object ({self.name}) not spawned yet.'
+        assert other_obj.id is not None, f'Object ({other_obj.name}) not spawned yet.'
         return len(pb.getClosestPoints(self.id, other_obj.id, tolerance)) > 0
 
     def in_collision(self, objects):
@@ -160,39 +139,41 @@ class SceneObject:
                 return True
         return False
 
-    def spawn(self, pose, other_objects=None):
-        # assert self.collision_engine_obj_id is None, 'Object already spawned in collision engine.'
-        # assert self.id is not None, 'Object not spawned in sim engine yet.'
+    def spawn(self, pose=None, other_objects=None):
+        node = Node(x=np.Inf, y=np.Inf, theta=np.Inf)
+        if pose is None:
+            node.sample(self.node_lower_bound, self.node_upper_bound)
+            pose = node.topose(z=self.object_z, euler=False)
+
         assert type(pose) == Pose
-
-        # if self.collision_engine_obj_id is None:
-        #     assert pose is None
-        # if self.id is None:
-        #     assert pose is not None
-
         pose_copy = deepcopy(pose)
         pose_copy.convert_orientation(euler=False)
-        try:
-            print(self.urdf_filename, pose_copy)
-            self._id = pb.loadURDF(self.urdf_filename,
-                                   pose_copy.position.tolist(), pose_copy.orientation.tolist(),
-                                   useFixedBase=self.is_fixed(), physicsClientId=self.client_id)
-        except Exception as e:
-            print('Failed to load URDF: {}'.format(self.urdf_filename))
-            raise e
+        # try:
+            # print(self.urdf_filename, pose_copy)
+        print(self.urdf_filename)
+        self._id = pb.loadURDF(self.urdf_filename,
+                               pose_copy.position.tolist(), pose_copy.orientation.tolist(),
+                               useFixedBase=self.is_fixed(), physicsClientId=self.client_id)
+        # except Exception as e:
+        #     print('Failed to load URDF: {}'.format(self.urdf_filename))
+        #     raise e
 
         # respawn if in collision
         if other_objects is not None:
             while self.in_collision(other_objects):# or \
                     # (goal_node is not None and self.is_fixed() and self.node.distance(goal_node) < goal_radius):
-                self.relocate(self.sample_pose())
+                node.sample(self.node_lower_bound, self.node_upper_bound)
+                self.relocate(node.topose(z=self.object_z, euler=True))
 
-        self.update_pose()
+        self.__update_internal_state()
 
         self.moveit.add_object_to_scene(self)
-        print(pb.getJointInfo(self._id, 0, self.client_id))
-        self._link_name = pb.getJointInfo(self.id, 0, self.client_id)[12].decode('utf-8')
-        self._name = self.urdf_filename.split('/')[-1].split('.')[0]
+        link_info = pb.getBodyInfo(self._id, physicsClientId=self.client_id)
+        self._link_names.append(link_info[0].decode('utf-8'))  # base link
+        for joint_idx in range(pb.getNumJoints(self._id, physicsClientId=self.client_id)):
+            link_name = pb.getJointInfo(self._id, joint_idx, physicsClientId=self.client_id)[12].decode('utf-8')
+            self._link_names.append(link_name)
+        self._name = link_info[1].decode('utf-8').split('.urdf')[0] + self.name_suffix
 
     def remove(self, client_id):
         assert self.id is not None, 'Object not spawned yet.'
@@ -205,26 +186,23 @@ class SceneObject:
         assert self.id is not None, 'Object not spawned yet.'
         assert type(pose) == Pose
 
+        node = Node(x=np.Inf, y=np.Inf, theta=np.Inf)
         pose_copy = deepcopy(pose)
-        if 'tunnel' in self.urdf_filename:
+        if 'tunnel' in self.urdf_filename or 'box' in self.urdf_filename:
             pose_copy.convert_orientation(euler=True)
             pose_copy.orientation.x = 0
             pose_copy.orientation.y = 0
         pose_copy.convert_orientation(euler=False)
-        pb.resetBasePositionAndOrientation(self.id, pose.position.tolist(), pose.orientation.tolist(),
+        pb.resetBasePositionAndOrientation(self.id, pose_copy.position.tolist(), pose_copy.orientation.tolist(),
                                            physicsClientId=self.client_id)
         # respawn if in collision
         if other_objects is not None:
             while self.in_collision(other_objects):
-                self.relocate(self.sample_pose(), other_objects=other_objects)
-        self.update_pose()
+                node.sample(self.node_lower_bound, self.node_upper_bound)
+                self.relocate(node.topose(z=self.object_z, euler=True), other_objects=other_objects)
+        # self.update_pose()
+        self.__update_internal_state()
         self.moveit.relocate_object_in_scene(self)
-
-    def sample_pose(self):
-        random_x = np.random.uniform(self.node_lower_bound.x, self.node_upper_bound.x)
-        random_y = np.random.uniform(self.node_lower_bound.y, self.node_upper_bound.y)
-        random_theta = np.random.uniform(self.node_lower_bound.theta, self.node_upper_bound.theta)
-        return Node(random_x, random_y, random_theta).topose(z=self.object_z, euler=True)
 
     def get_sim_pose(self, euler=False):
         assert self.id is not None, 'Object not spawned yet.'
@@ -234,38 +212,32 @@ class SceneObject:
         pose.convert_orientation(euler=euler)
         return pose
 
-    def get_real_pose(self, euler):
-        # assert self.id is not None, 'Object not spawned yet.'
-        assert not self.sim
+    def get_real_pose(self, euler=False):
+        assert not self.is_base(), f'Cannot get AprilTag pose for base objects (here, {self._name}).'
+        assert self.apriltag_id is not None
+        assert self.apriltag_family is not None
+        assert self.camera is not None
 
         while True:
-            pose = self.camera.get_apriltag_pose_in_robot_frame(self.apriltag_id, self.apriltag_family, euler=True)
+            pose = self.camera.get_apriltag_pose_in_robot_frame(self.apriltag_id, self.apriltag_family)
             if pose is None:
-                self.__print.print_error(f'Object w/ AprilTag ID {self.apriltag_id} not detected.')
-                input('Reposition object and press Enter to continue...')
+                self.__print.print_error(f'Object with AprilTag ID {self.apriltag_id} not detected.\n'
+                                         f'Reposition and press Enter to continue...')
+                input()
             else:
                 break
 
         if 'tunnel' in self.urdf_filename:
             pose.position.z -= 0.33655/2
-            orientation = convert_orientation(pose.orientation, euler=euler)
         else:
-            # pose.position.z += -0.065  # self.get_size()[2] / 2  # pose corresponds to object's geometric center in pybullet
-            # pose.position.x = 0
-            # pose.position.y = 0
-            pose.position.z += 0.1
-            orientation = convert_orientation(pose.orientation, euler=euler)
-        return Pose(position=pose.position, orientation=orientation)
-
-    def update_sim_pose_from_real(self):
-        # assert self.id is not None, 'Object not spawned yet.'
-        # self.relocate(self.get_real_pose())
-        return NotImplementedError
+            pose.position.z -= self.size[2] / 2  # pose corresponds to object's geometric center in PyBullet
+        pose.convert_orientation(euler=euler)
+        return pose
 
     def get_corner_pts(self, obj_pose=None, size=None):
         assert self.id is not None, 'Object not spawned yet.'
         if size is None:
-            obj_size = self.get_size()
+            obj_size = self.size
         else:
             obj_size = size
         if obj_pose is None:
@@ -293,11 +265,6 @@ class SceneObject:
             contour_pts.extend(np.linspace(pt1, pt2, num=20))
         return np.array(contour_pts)
 
-    def get_friction(self):
-        assert self.id is not None, 'Object not spawned yet.'
-
-        return pb.getDynamicsInfo(self.id, -1)[1]
-
     def plot_contour_in_sim(self, obj_pose=None, timeout=0, c=(0, 0, 1), thickness=1):
         assert self.id is not None, 'Object not spawned yet.'
 
@@ -305,18 +272,13 @@ class SceneObject:
             obj_pose = self.pose
 
         corner_pts = self.get_corner_pts(obj_pose)
-        print(corner_pts)
-
-        # for i in range(len(corner_pts)):
-        #     print(tuple(corner_pts[i]), corner_pts[(i + 1) % len(corner_pts)])
-        #     pb.addUserDebugLine(list(corner_pts[i]), list(corner_pts[(i + 1) % len(corner_pts)]), c, thickness, timeout)
         for pt1, pt2 in zip(corner_pts, corner_pts[1:]):
-            print(pt1.tolist(), pt2.tolist())
             pb.addUserDebugLine(pt1.tolist(), pt2.tolist(), c, thickness, timeout)
         pb.addUserDebugLine(corner_pts[-1].tolist(), corner_pts[0].tolist(), c, thickness, timeout)
 
-    def plot_contour_in_matplotlib(self, ax, color=None, fill=False, alpha=1, obj_pose=None, thickness=1):
+    def plot_contour_in_matplotlib(self, ax, color=None, fill=False, alpha=1, obj_pose=None):
         assert self.id is not None, 'Object not spawned yet.'
+
         if obj_pose is None:
             obj_pose = self.pose
 
@@ -339,16 +301,18 @@ class SceneObject:
                 ec = 'black'
                 alpha = 0.2
 
-        # ax.scatter(self.node.y, self.node.x, c=color, marker='.', s=100)
-        # print(obj_pose, self.get_sim_pose(euler=True))
         patch = plt.Polygon(np.fliplr(self.get_corner_pts(obj_pose)), closed=True,
                             fill=fill, facecolor=color, edgecolor=ec, linewidth=1, alpha=alpha)
         ax.add_patch(patch)
         plt.show(block=False)
 
     def update_sim_from_real(self):
-        real_pose = self.get_real_pose(euler=False)
+        real_pose = self.get_real_pose()
         if real_pose is None:
-            self.__print.print_error(f'Object w/ AprilTag ID {self.apriltag_id} not detected.')
+            self.__print.print_error(f'Object with AprilTag ID {self.apriltag_id} not detected.')
             return False
         self.relocate(real_pose)
+
+    def __update_internal_state(self):
+        self.pose = self.get_sim_pose()
+        self.node = self.pose.tonode()

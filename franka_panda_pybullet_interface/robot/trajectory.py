@@ -79,3 +79,20 @@ class Trajectory:
                 t.append(waypt.time_from_start.to_sec())
             return t, tau, q, dq, ddq
         return None
+
+    def get_traj(self, start_q, end_q):
+        retval = self.get_plan(start_q, end_q)
+        if retval is None:
+            return None
+        t, _, q, dq, ddq = retval
+        dense_q = []
+        dense_dq = []
+        dense_ddq = []
+        for i in range(len(t) - 1):
+            q_traj, dq_traj, ddq_traj = self.get_ruckig_traj(start_q=q[i], start_dq=dq[i], start_ddq=ddq[i],
+                                                             end_q=q[i+1], end_dq=dq[i+1], end_ddq=ddq[i+1])
+            dense_q.extend(q_traj)
+            dense_dq.extend(dq_traj)
+            dense_ddq.extend(ddq_traj)
+        dense_t = np.arange(0, len(dense_q) * 0.001, 0.001)
+        return dense_t, None, dense_q, dense_dq, dense_ddq

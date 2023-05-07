@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import pybullet as pb
 import rospy
 from panda_sim_real_interface.msg import JointDataArray
@@ -97,16 +98,20 @@ class Motion:
         if not self.robot.enable_realtime:
             pb.stepSimulation()
             self.robot.sim_steps += 1
+        else:
+            time.sleep(0.001)
 
-    def execute_dq_trajectory(self, dq_trajectory, timestamps):
+    def execute_dq_trajectory(self, dq_trajectory, q_trajectory, timestamps):
         prev_timestamp = None
-        for t, dq in zip(timestamps, dq_trajectory):
+        for t, dq, q in zip(timestamps, dq_trajectory, q_trajectory):
             if prev_timestamp is not None:
                 assert t - prev_timestamp == self.robot.timestep
                 prev_timestamp = t
 
+            # while not self.__has_reached_q(q):
             self.__execute_dq_command(dq)
-
+        # make robot stop moving by switching to position control mode
+        self.__set_joint_angles(self.robot.q)#q_trajectory[-1])
         return True
 
     def execute_ee_velocity(self, ee_velocity, duration):
@@ -120,3 +125,13 @@ class Motion:
 
     def close_gripper(self):
         pass
+
+    def open_gripper_real(self):
+        rospy.wait_for_service('open_gripper')
+        open_gripper = rospy.ServiceProxy('open_gripper', Empty)
+        open_gripper()
+
+    def close_gripper_real(self):
+        rospy.wait_for_service('close_gripper')
+        close_gripper = rospy.ServiceProxy('close_gripper', Empty)
+        close_gripper()

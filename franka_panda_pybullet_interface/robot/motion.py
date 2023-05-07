@@ -1,5 +1,9 @@
 import numpy as np
 import pybullet as pb
+import rospy
+from panda_sim_real_interface.msg import JointDataArray
+from panda_sim_real_interface.srv import RobotTrajectory
+from std_srvs.srv import Empty
 
 
 class Motion:
@@ -48,6 +52,25 @@ class Motion:
                 return False
 
         return True
+
+    def execute_q_trajectory_real(self, q_trajectory, timestamps):
+        # wait for ROS service to be ready
+        rospy.wait_for_service('execute_trajectory')
+        execute_trajectory = rospy.ServiceProxy('execute_trajectory', RobotTrajectory)
+
+        try:
+            q_traj = [JointDataArray(list(q)) for q in q_trajectory]
+            resp = execute_trajectory(timestamps, q_traj)
+            return resp.success
+        except rospy.ServiceException as e:
+            print(f'Service call failed: {e}')
+            return False
+
+    @staticmethod
+    def move_to_default_q_real():
+        rospy.wait_for_service('robot_phone_home')
+        home = rospy.ServiceProxy('robot_phone_home', Empty)
+        home()
 
     def move_to_ee_pose(self, ee_pose, direct=False):
         q = self.robot.kinematics.get_ik_solution(ee_pose, seed_q=self.robot.state.q)

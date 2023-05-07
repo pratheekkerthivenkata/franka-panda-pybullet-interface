@@ -2,6 +2,8 @@ import numpy as np
 import pybullet as pb
 
 from ..utils.datatypes import Pose, Point, Quaternion, Velocity
+import rospy
+from panda_sim_real_interface.srv import RobotState
 
 
 class State:
@@ -19,6 +21,13 @@ class State:
     @property
     def default_ee_pose(self):
         return self._default_ee_pose
+
+    @property
+    def real_q(self):
+        rospy.wait_for_service('get_real_q')
+        get_real_q = rospy.ServiceProxy('get_real_q', RobotState)
+        resp = get_real_q()
+        return np.array(resp.q.data)
 
     @property
     def q(self):

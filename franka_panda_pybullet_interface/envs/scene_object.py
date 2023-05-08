@@ -108,9 +108,10 @@ class SceneObject:
         y_min = obj_pose.position.y - self.size[1] / 2 - padding
         y_max = obj_pose.position.y + self.size[1] / 2 + padding
 
-        orientation = convert_orientation(obj_pose.orientation, euler=True)
-        rotation_matrix = np.array([[np.cos(orientation.z), -np.sin(orientation.z)],
-                                    [np.sin(orientation.z), np.cos(orientation.z)]])
+        obj_pose.convert_orientation(euler=True)
+        # orientation = convert_orientation(obj_pose.orientation, euler=True)
+        rotation_matrix = np.array([[np.cos(obj_pose.orientation.z), -np.sin(obj_pose.orientation.z)],
+                                    [np.sin(obj_pose.orientation.z), np.cos(obj_pose.orientation.z)]])
         rotated_x_bounds = np.matmul(rotation_matrix, np.array([[x_min], [x_max]]))
         rotated_y_bounds = np.matmul(rotation_matrix, np.array([[y_min], [y_max]]))
 
@@ -245,7 +246,7 @@ class SceneObject:
             obj_size = size
         if obj_pose is None:
             obj_pose = self.pose
-        obj_pose.orientation = convert_orientation(obj_pose.orientation, euler=True)
+        obj_pose.convert_orientation(euler=True)
 
         # TODO: generalize; this bit of code currently assumes all objects are rectangular
         corner_pts_at_origin = np.array([(obj_size[0] / 2, obj_size[1] / 2), (obj_size[0] / 2, -obj_size[1] / 2),

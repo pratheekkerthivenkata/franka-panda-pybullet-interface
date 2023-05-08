@@ -219,7 +219,7 @@ class SceneObject:
         assert self.camera is not None
 
         while True:
-            pose = self.camera.get_apriltag_pose_in_robot_frame(self.apriltag_id, self.apriltag_family)
+            pose = self.camera.get_apriltag_pose_in_robot_frame(self.apriltag_id, self.apriltag_family, euler=True)
             if pose is None:
                 self.__print.print_error(f'Object with AprilTag ID {self.apriltag_id} not detected.\n'
                                          f'Reposition and press Enter to continue...')
@@ -230,7 +230,10 @@ class SceneObject:
         if 'tunnel' in self.urdf_filename:
             pose.position.z -= 0.33655/2
         else:
-            pose.position.z -= self.size[2] / 2  # pose corresponds to object's geometric center in PyBullet
+            # pose.position.z -= self.size[2] / 2  # pose corresponds to object's geometric center in PyBullet
+            pose.position.z = self.object_z
+            pose.orientation.x = 0
+            pose.orientation.y = 0
         pose.convert_orientation(euler=euler)
         return pose
 

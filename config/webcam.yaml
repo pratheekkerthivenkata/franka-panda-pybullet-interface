@@ -2,17 +2,17 @@ left:
   serial_number: 864EE09F
   image_width: 640
   image_height: 480
-  camera_matrix: [643.17533, 0, 312.50209, 0, 639.57581, 248.27673, 0, 0, 1]
-  distortion_coefficients: [0.026504, -0.065564, 0.001687, 0.004669, 0]
-  pose_in_robot_frame:
-    position: [0.407578, 0.312748, 1.10505]
-    orientation: [-0.0393918, 0.994769, -0.0942244, 0.00207674]
-right:
-  serial_number: D640145F
-  image_width: 640
-  image_height: 480
   camera_matrix: [644.73371, 0, 315.87594, 0, 641.0659, 249.40313, 0, 0, 1]
   distortion_coefficients: [0.014610, -0.106864, 0.004486, 0.011035, 0]
   pose_in_robot_frame:
     position: [0.521719, -0.617056, 1.15572]
     orientation: [0.997982, -0.00874759, -0.0320179, -0.0541298]
+right:
+  serial_number: D640145F
+  image_width: 640
+  image_height: 480
+  camera_matrix: [643.17533, 0, 312.50209, 0, 639.57581, 248.27673, 0, 0, 1]
+  distortion_coefficients: [0.026504, -0.065564, 0.001687, 0.004669, 0]
+  pose_in_robot_frame:
+    position: [0.407578, 0.312748, 1.10505]
+    orientation: [-0.0393918, 0.994769, -0.0942244, 0.00207674]

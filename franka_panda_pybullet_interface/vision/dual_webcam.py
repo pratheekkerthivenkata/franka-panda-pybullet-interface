@@ -57,5 +57,5 @@ class DualWebcam:
             else:
                 pose = right_pose
 
-        pose.convert_orientation(pose.orientation, euler)
+        pose.convert_orientation(euler)
         return pose

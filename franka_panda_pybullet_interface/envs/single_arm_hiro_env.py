@@ -26,17 +26,17 @@ class SingleArmHIROEnv(RobotEnv):
         self.back_wall = \
             self.__setup_env(env_metadata['back_wall']['filename'],
                              env_metadata['back_wall']['position'], env_metadata['back_wall']['orientation'])
-        self.support_beams = \
-            self.__setup_env(env_metadata['support_beams']['filename'],
-                             env_metadata['support_beams']['position'], env_metadata['support_beams']['orientation'])
-        self.clamps = \
-            self.__setup_env(env_metadata['clamps']['filename'],
-                             env_metadata['clamps']['position'], env_metadata['clamps']['orientation'])
+        # self.support_beams = \
+        #     self.__setup_env(env_metadata['support_beams']['filename'],
+        #                      env_metadata['support_beams']['position'], env_metadata['support_beams']['orientation'])
+        # self.clamps = \
+        #     self.__setup_env(env_metadata['clamps']['filename'],
+        #                      env_metadata['clamps']['position'], env_metadata['clamps']['orientation'])
         self.plane = \
             self.__setup_env(env_metadata['plane']['filename'],
                              env_metadata['plane']['position'], env_metadata['plane']['orientation'])
 
-        self.base_objects = [self.table_wooden, self.table_ikea, self.back_wall, self.support_beams, self.clamps, self.plane]
+        self.base_objects = [self.table_wooden, self.table_ikea, self.back_wall, self.plane]  # self.support_beams, self.clamps
         self.movable_objects = []
         self.fixed_obstacles = []
 

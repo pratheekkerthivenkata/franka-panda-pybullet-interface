@@ -1,11 +1,11 @@
 table_wooden:
   filename: base_objects/table_wooden.urdf
-  position: [-0.26305, -0.04297, -0.45]
+  position: [-0.39905, -0.04297, -0.48]
   orientation: [0, 0, 0]
 table_ikea:
   filename: base_objects/table_ikea.urdf
-  position: [0.6114, -0.0502, 0]
-  orientation: [3.1214402987334857, 0.0013161004296716216, 0]
+  position: [0.4614, -0.0502, -0.0508]
+  orientation: [0, 0, 0]
 back_wall:
   filename: base_objects/back_wall.urdf
   position: [-0.7366, 0, 0]

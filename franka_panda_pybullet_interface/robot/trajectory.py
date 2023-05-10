@@ -152,7 +152,6 @@ class Trajectory:
         while res == Result.Working:
             res = otg.update(inp, out)
 
-            print('\t'.join([f'{out.time:0.3f}'] + [f'{p:0.3f}' for p in out.new_position]))
             out_list.append(copy(out))
             qs.append(copy(out.new_position))
             dqs.append(copy(out.new_velocity))

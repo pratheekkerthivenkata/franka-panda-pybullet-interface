@@ -41,9 +41,6 @@ class SceneObject:
         self.node_upper_bound = node_upper_bound
         self.object_z = object_z
 
-        self.pose = None
-        self.node = None
-
         self.patch = None
 
         self.apriltag_id = apriltag_id
@@ -94,6 +91,16 @@ class SceneObject:
     def friction(self):
         assert self.id is not None, 'Object not spawned yet.'
         return pb.getDynamicsInfo(self.id, -1)[1]
+
+    @property
+    def pose(self):
+        assert self._id is not None
+        return self.get_sim_pose()
+
+    @property
+    def node(self):
+        assert self._id is not None
+        return self.pose.tonode()
 
     def get_xy_bounds(self, obj_pose=None, padding=0.0):
         # TODO: not quite right..., need tight bounding box
@@ -166,8 +173,6 @@ class SceneObject:
                 node.sample(self.node_lower_bound, self.node_upper_bound)
                 self.relocate(node.topose(z=self.object_z, euler=True))
 
-        self.__update_internal_state()
-
         self.moveit.add_object_to_scene(self)
         link_info = pb.getBodyInfo(self._id, physicsClientId=self.client_id)
         self._link_names.append(link_info[0].decode('utf-8'))  # base link
@@ -180,8 +185,6 @@ class SceneObject:
         assert self.id is not None, 'Object not spawned yet.'
         pb.removeBody(self.id, physicsClientId=client_id)
         self._id = None
-        self.pose = None
-        self.node = None
 
     def relocate(self, pose, other_objects=None):
         assert self.id is not None, 'Object not spawned yet.'
@@ -202,7 +205,6 @@ class SceneObject:
                 node.sample(self.node_lower_bound, self.node_upper_bound)
                 self.relocate(node.topose(z=self.object_z, euler=True), other_objects=other_objects)
         # self.update_pose()
-        self.__update_internal_state()
         self.moveit.relocate_object_in_scene(self)
 
     def get_sim_pose(self, euler=False):
@@ -316,7 +318,3 @@ class SceneObject:
             self.__print.print_error(f'Object with AprilTag ID {self.apriltag_id} not detected.')
             return False
         self.relocate(real_pose)
-
-    def __update_internal_state(self):
-        self.pose = self.get_sim_pose()
-        self.node = self.pose.tonode()

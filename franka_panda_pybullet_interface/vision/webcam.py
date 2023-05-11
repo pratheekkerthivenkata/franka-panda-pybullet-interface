@@ -31,12 +31,24 @@ class Webcam:
         self.intrinsics = [self.newcameramatrix[0][0], self.newcameramatrix[1][1],
                            self.newcameramatrix[0][2], self.newcameramatrix[1][2]]
 
-        # extrinsics
-        cam_pose = Pose(position=Point(*cam_params[self.cam]['pose_in_robot_frame']['position']),
-                        orientation=Quaternion(*cam_params[self.cam]['pose_in_robot_frame']['orientation']))
-        cam_pose.convert_orientation(euler=True)
-        self.robot_base_to_cam_tf = tf.compose_matrix(translate=cam_pose.position.tolist(),
-                                                      angles=cam_pose.orientation.tolist())
+        if cam == 'left':
+            self.robot_base_to_cam_tf = [[0.999682, 0.002808, 0.025043, 0.442848],
+                                         [0.002739, -0.999992, 0.002779, -0.551149],
+                                         [0.025050, -0.002709, -0.999683, 1.232196],
+                                         [0, 0, 0, 1]]
+        # else:
+        #     self.robot_base_to_cam_tf = [[0.996656, -0.080057, 0.016368, 0.481453],
+        #                                  [-0.080422, -0.996496, 0.022994, 0.121881],
+        #                                  [0.014470, -0.024233, -0.999602, 1.158621],
+        #                                  [0, 0, 0, 1]]
+            self.robot_base_to_cam_tf = np.array(self.robot_base_to_cam_tf)
+        else:
+            # extrinsics
+            cam_pose = Pose(position=Point(*cam_params[self.cam]['pose_in_robot_frame']['position']),
+                            orientation=Quaternion(*cam_params[self.cam]['pose_in_robot_frame']['orientation']))
+            cam_pose.convert_orientation(euler=True)
+            self.robot_base_to_cam_tf = tf.compose_matrix(translate=cam_pose.position.tolist(),
+                                                          angles=cam_pose.orientation.tolist())
 
         self.apriltag = AprilTag()
 

@@ -4,7 +4,7 @@ table_wooden:
   orientation: [0, 0, 0]
 table_ikea:
   filename: base_objects/table_ikea.urdf
-  position: [0.4614, -0.0502, -0.0508]
+  position: [0.4614, -0.0502, 0] #-0.0508]
   orientation: [0, 0, 0]
 back_wall:
   filename: base_objects/back_wall.urdf

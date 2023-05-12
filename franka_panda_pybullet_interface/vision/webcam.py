@@ -9,6 +9,7 @@ from .apriltag import AprilTag
 from ..definitions import CONFIG_DIR
 from ..utils.datatypes import Pose, Point, Quaternion
 from ..utils.file_io import load_yaml
+import matplotlib.pyplot as plt
 
 
 class Webcam:
@@ -100,7 +101,12 @@ class Webcam:
                 break
 
     def get_apriltag_pose_in_robot_frame(self, tag_id, family, euler=False):
-        pose_mat = self.apriltag.get_pose(self.get_rgb_img(), tag_id, family, self.intrinsics, matrix=True)
+        for _ in range(5):
+            img = self.get_rgb_img()
+        # fig, ax = plt.subplots()
+        # ax.imshow(img)
+        # plt.show(block=False)
+        pose_mat = self.apriltag.get_pose(img, tag_id, family, self.intrinsics, matrix=True)
         if pose_mat is None:
             return None
         pose_mat = self.robot_base_to_cam_tf @ pose_mat

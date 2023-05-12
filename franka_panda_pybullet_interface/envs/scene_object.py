@@ -186,7 +186,7 @@ class SceneObject:
         pb.removeBody(self.id, physicsClientId=client_id)
         self._id = None
 
-    def relocate(self, pose, other_objects=None):
+    def relocate(self, pose, other_objects=None, collis=True):
         assert self.id is not None, 'Object not spawned yet.'
         assert type(pose) == Pose
 
@@ -199,12 +199,13 @@ class SceneObject:
         pose_copy.convert_orientation(euler=False)
         pb.resetBasePositionAndOrientation(self.id, pose_copy.position.tolist(), pose_copy.orientation.tolist(),
                                            physicsClientId=self.client_id)
-        # respawn if in collision
-        if other_objects is not None:
-            while self.in_collision(other_objects):
-                node.sample(self.node_lower_bound, self.node_upper_bound)
-                self.relocate(node.topose(z=self.object_z, euler=True), other_objects=other_objects)
-        # self.update_pose()
+        if collis:
+            # respawn if in collision
+            if other_objects is not None:
+                while self.in_collision(other_objects):
+                    node.sample(self.node_lower_bound, self.node_upper_bound)
+                    self.relocate(node.topose(z=self.object_z, euler=True), other_objects=other_objects)
+            # self.update_pose()
         self.moveit.relocate_object_in_scene(self)
 
     def get_sim_pose(self, euler=False):
@@ -317,4 +318,4 @@ class SceneObject:
         if real_pose is None:
             self.__print.print_error(f'Object with AprilTag ID {self.apriltag_id} not detected.')
             return False
-        self.relocate(real_pose)
+        self.relocate(real_pose, collis=False)

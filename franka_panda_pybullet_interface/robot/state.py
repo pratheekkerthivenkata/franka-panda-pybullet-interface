@@ -3,7 +3,7 @@ import pybullet as pb
 
 from ..utils.datatypes import Pose, Point, Quaternion, Velocity
 import rospy
-from panda_sim_real_interface.srv import RobotState
+#from panda_sim_real_interface.srv import RobotState
 
 
 class State:
@@ -58,3 +58,20 @@ class State:
     def is_gripper_open(self):
         finger_states = pb.getJointStates(self.robot.robot_id, self.robot.finger_joint_ids)
         return finger_states[0][0] > 0.3 and finger_states[1][0] > 0.3
+
+    def in_self_collision(self, q=None):
+        if q is None:
+            q = self.q
+
+    def in_env_collision(self, q=None):
+        if q is None:
+            q = self.q
+
+    def in_collision(self, q=None):
+        if q is None:
+            q = self.q
+        return self.in_self_collision(q) or self.in_env_collision(q)
+
+    def is_manipulable(self, q=None):
+        if q is None:
+            q = self.q

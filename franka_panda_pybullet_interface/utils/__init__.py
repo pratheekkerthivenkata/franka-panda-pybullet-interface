@@ -1,1 +1,1 @@
-from .print import Print
+from .printer import Print

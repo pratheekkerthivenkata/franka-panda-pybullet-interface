@@ -193,3 +193,18 @@ def get_fd_solution(M, C, g, f, dq, tau):
 @njit
 def get_id_solution(M, C, g, f, dq, ddq):
     return M @ ddq + C @ dq + g + f
+
+
+@njit
+def get_ddq(J, ee_acc_k, dq):
+    return np.linalg.pinv(J) @ (ee_acc_k - get_jacobian_derivative(J, dq) @ dq)
+
+
+@njit
+def get_dq(J, ee_vel):
+    return np.linalg.pinv(J) @ ee_vel
+
+
+@njit
+def get_ee_velocity(J, dq):
+    return J @ dq

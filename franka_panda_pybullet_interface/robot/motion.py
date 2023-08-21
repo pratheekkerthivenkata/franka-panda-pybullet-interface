@@ -2,8 +2,8 @@ import numpy as np
 import time
 import pybullet as pb
 import rospy
-from panda_sim_real_interface.msg import JointDataArray
-from panda_sim_real_interface.srv import RobotTrajectory
+#from panda_sim_real_interface.msg import JointDataArray
+#from panda_sim_real_interface.srv import RobotTrajectory
 from std_srvs.srv import Empty
 
 

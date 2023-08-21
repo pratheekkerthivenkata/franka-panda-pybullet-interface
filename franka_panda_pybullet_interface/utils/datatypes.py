@@ -97,6 +97,7 @@ class JointLimits:
     ddq: np.ndarray
     dddq: np.ndarray
     tau: np.ndarray
+    dtau: np.ndarray
 
 
 @dataclass

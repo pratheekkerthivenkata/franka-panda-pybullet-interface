@@ -1,3 +1,5 @@
+from franka_panda_pybullet_interface.robot.motion import Motion
+
 self.motion = Motion()
 input('Press Enter to continue...')
 

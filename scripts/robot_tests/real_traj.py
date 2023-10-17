@@ -12,6 +12,7 @@ if __name__ == '__main__':
     end_q = env.robot.limits.sample_q()
 
     retval = env.robot.trajectory.get_traj(start_q=start_q, end_q=end_q)
+    print(start_q,end_q,retval)
     if retval is not None:
         dense_t, _, dense_q, dense_dq, dense_ddq, t, q = retval
         print(dense_t[0], dense_t[-1])

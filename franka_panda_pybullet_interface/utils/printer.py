@@ -1,13 +1,16 @@
 import os
+import sys
+
+sys.path.insert(0, '/home/insideout/HiRo/npm/npm_base/')
 import time
 from datetime import datetime
 
 from termcolor import cprint
 
-from npm_base.utils import load_txt, write_txt
+from npm.npm_base.utils import load_txt, write_txt
 
 
-class Printer:
+class Print:
     def __init__(self, source, experiment_name='', save=False):
         self.source = source  # where is the logger object instantiated? could be a class, function, custom tag, etc.
         self.save_log = save

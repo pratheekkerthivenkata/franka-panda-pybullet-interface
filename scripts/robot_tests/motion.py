@@ -1,7 +1,7 @@
-from franka_panda_pybullet_interface.robot.motion import Motion
+#from franka_panda_pybullet_interface.robot.motion import Motion
 
-self.motion = Motion()
-input('Press Enter to continue...')
+#self.motion = Motion()
+#input('Press Enter to continue...')
 
 # plot, actual vs expected
 # print err
